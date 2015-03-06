@@ -1,3 +1,6 @@
+from datetime import datetime
+import requests
+
 from django.db import models
 from django.contrib.auth.models import Group, User
 
@@ -50,9 +53,10 @@ class Url(models.Model):
     # not editables
     current_status = models.IntegerField(choices=STATUS_CHOICES,
                                          default=OK, editable=False)
+    current_status_code = models.IntegerField(null=True, editable=False)
     last_check = models.DateTimeField(null=True,
                                       editable=False,
-                                      auto_now_add=True)
+                                      auto_now=True)
 
     last_check_ok = models.DateTimeField('Last OK',
                                          null=True,
@@ -67,4 +71,26 @@ class Url(models.Model):
                                             editable=False)
 
     def __str__(self):
-        return "{} - {}".format(self.url, self.hostname)
+        return "{} - Last Check {} - {}. ".format(self.url, self.last_check,
+                                                  self.current_status)
+
+    def check_http(self):
+        """ Ping the URL and get the status """
+        response = requests.get(self.url)
+        self.current_status_code = response.status_code
+
+        if response.ok:
+            if self.current_status == Url.ERROR:
+                pass
+                #send OK notification
+            self.current_status = Url.OK
+            self.last_check_ok = datetime.now()
+        else:
+            if self.current_status == Url.OK:
+                self.current_status = Url.WARNING
+            elif self.current_status == Url.WARNING:
+                self.current_status = Url.ERROR
+                #send ERROR notification
+
+        # send to graphite status_code, response_time, size, etc
+        self.save()
