@@ -82,3 +82,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+
+# Celery settings
+BROKER_URL = 'amqp://guest:guest@localhost//'
+
+CELERY_ACCEPT_CONTENT = ['json']
