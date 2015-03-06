@@ -1,7 +1,7 @@
-from datetime import datetime
 import requests
 
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import Group, User
 
 
@@ -82,15 +82,18 @@ class Url(models.Model):
         if response.ok:
             if self.current_status == Url.ERROR:
                 pass
-                #send OK notification
+                # send OK notification
             self.current_status = Url.OK
-            self.last_check_ok = datetime.now()
+            self.last_check_ok = timezone.now()
         else:
             if self.current_status == Url.OK:
                 self.current_status = Url.WARNING
+                self.last_check_warn = timezone.now()
+
             elif self.current_status == Url.WARNING:
                 self.current_status = Url.ERROR
-                #send ERROR notification
+                self.last_check_error = timezone.now()
+                # send ERROR notification
 
         # send to graphite status_code, response_time, size, etc
         self.save()
