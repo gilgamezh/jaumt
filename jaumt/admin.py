@@ -10,9 +10,9 @@ class WebsiteAdmin(admin.ModelAdmin):
 
 
 class UrlAdmin(admin.ModelAdmin):
-    list_display = ('website', 'description', 'url', 'current_status',
+    list_display = ('website', 'description', 'url', 'status',
                     'enabled', 'last_check')
-    list_filter = ['website', 'current_status']
+    list_filter = ['website', 'status']
 
 admin.site.register(Website, WebsiteAdmin)
 admin.site.register(Url, UrlAdmin)

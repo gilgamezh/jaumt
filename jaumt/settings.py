@@ -37,6 +37,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'jaumt',
+    # contrib
+    'django_fsm',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -83,9 +85,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-
-
 # Celery settings
 BROKER_URL = 'amqp://guest:guest@localhost//'
-
-CELERY_ACCEPT_CONTENT = ['json']
+#CELERY_ACCEPT_CONTENT = ['json']
+#CELERY_TASK_SERIALIZER = 'json'
+#CELERY_RESULT_SERIALIZER = 'json'
