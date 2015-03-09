@@ -51,7 +51,7 @@ class Url(models.Model):
     last_check_warn = models.DateTimeField('Last WARNING',
                                            null=True,
                                            editable=False)
-    last_check_error = models.DateTimeField('Last ERROR',
+    last_check_downtime = models.DateTimeField('Last DOWNTIME',
                                             null=True,
                                             editable=False)
 
@@ -63,35 +63,42 @@ class Url(models.Model):
         """ Call http_get task and sets handle_status as callback. """
         http_get.apply_async((self.id), link=self.handle_status())
 
-    @transition(field=status, source='WARNING', target='OK')
-    def set_ok(self):
+    @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
+    def set_ok(self, send_alerts=False):
         self.last_check_ok = timezone.now()
-        #send_email_alert.delay() OK
+        # send_email_alert.delay() OK
 
-    @transition(field=status, source=['ERROR', 'OK'], target='WARNING')
+    @transition(field=status, source='OK', target='WARNING')
     def set_warning(self):
         self.last_check_warn = timezone.now()
 
-    @transition(field=status, source='WARNING', target='ERROR')
-    def set_error(self):
+    @transition(field=status, source=['RETRYING', 'WARNING'], target='DOWNTIME')
+    def set_downtime(self, send_alerts=True):
         self.last_check_error = timezone.now()
-        #send_email_alert.delay() ERROR
+        # send_email_alert.delay() DOWNTIME
 
+    @transition(field=status, source='DOWNTIME', target='RETRYING')
+    def set_retrying(self):
+        pass
 
     def handle_status(self, response):
         self.current_status_code = response.status_code
         self.last_check = timezone.now()
         if response.ok:
-            if self.status == self.WARNING:
+            if self.status == "WARNING":
                 self.set_ok()
-            elif self.status == self.ERROR:
-                self.set_warning()
+            elif self.status == "RETRYING":
+                self.set_ok(send_alerts=True)
+            elif self.status == "DOWNTIME":
+                self.set_retrying()
         else:
-            if self.status == self.OK:
+            if self.status == "OK":
                 self.set_warning()
+            elif self.status == "WARNING":
+                self.set_downtime(send_alerts=True)
+            elif self.status == "RETRYING":
+                self.set_downtime()
 
-            elif self.status == self.WARNING:
-                self.set_error()
 
         # send to graphite status_code, response_time, size, etc
-        #push_metrics.delay()
+        # push_metrics.delay()
