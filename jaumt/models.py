@@ -41,7 +41,7 @@ class Url(models.Model):
                                              null=True)
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
-    status = FSMField(default='OK', protected=True)
+    status = FSMField(default='OK', protected=True, editable=False)
     current_status_code = models.IntegerField(null=True, editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(null=True, editable=False)
@@ -76,6 +76,7 @@ class Url(models.Model):
     def set_error(self):
         self.last_check_error = timezone.now()
         #send_email_alert.delay() ERROR
+
 
     def handle_status(self, response):
         self.current_status_code = response.status_code
