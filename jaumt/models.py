@@ -42,7 +42,6 @@ class Url(models.Model):
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
     status = FSMField(default='OK', protected=True)
-    current_status_hits = models.IntegerField(default=0)
     current_status_code = models.IntegerField(null=True, editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(null=True, editable=False)
