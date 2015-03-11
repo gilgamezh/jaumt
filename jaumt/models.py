@@ -1,14 +1,14 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django_fsm import FSMField, transition
 
-from jaumt.tasks import http_get
+from jaumt.tasks import http_get, send_email_alert
 
 
 class RecipientList(models.Model):
     description = models.CharField(max_length=300)
-    recipients = models.ManyToManyField(Group)
+    recipients = models.ManyToManyField(User)
 
     def __str__(self):
         return self.description
@@ -39,6 +39,7 @@ class Url(models.Model):
     recipients_list = models.ManyToManyField(RecipientList,
                                              blank=True,
                                              null=True)
+    alert_footer = models.CharField(max_length=500, blank=True)
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
     status = FSMField(default='OK', protected=True, editable=False)
@@ -46,18 +47,34 @@ class Url(models.Model):
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(null=True, editable=False)
     last_check_ok = models.DateTimeField('Last OK',
-                                         null=True,
-                                         editable=False)
+                                         null=True, editable=False)
     last_check_warn = models.DateTimeField('Last WARNING',
-                                           null=True,
-                                           editable=False)
+                                           null=True, editable=False)
     last_check_downtime = models.DateTimeField('Last DOWNTIME',
-                                            null=True,
-                                            editable=False)
+                                               null=True, editable=False)
 
     def __str__(self):
         return "{} - Last Check {} - {}. ".format(self.url, self.last_check,
                                                   self.status)
+
+    def send_alerts(self):
+        subject = '[{}] {}'.format(self.status, self.description)
+        message = "El sitio falló con el código {} \n {}".format(
+            self.current_status_code, self.alert_footer)  # TODO Poner esto como una config general
+        from_email = 'soporte@cmd.com.ar'
+        recipient_lists = []
+        if len(self.recipients_list.all()) > 0:
+            # if url has a recipient_list use it
+            recipients = self.recipients_list
+        else:
+            # else use the website recipient_list as default
+            recipients = self.website.recipients_list
+
+            for recipient in recipients.all():
+                for user in recipient.recipients.all():
+                    recipient_lists.append(user.email)
+
+        send_email_alert.delay(subject, message, from_email, recipient_lists)
 
     def check_url(self):
         """ Call http_get task and sets handle_status as callback. """
@@ -66,7 +83,9 @@ class Url(models.Model):
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
     def set_ok(self, send_alerts=False):
         self.last_check_ok = timezone.now()
-        # send_email_alert.delay() OK
+        if send_alerts:
+            # send_email_alert.delay() OK
+            pass
 
     @transition(field=status, source='OK', target='WARNING')
     def set_warning(self):
@@ -75,7 +94,9 @@ class Url(models.Model):
     @transition(field=status, source=['RETRYING', 'WARNING'], target='DOWNTIME')
     def set_downtime(self, send_alerts=True):
         self.last_check_error = timezone.now()
-        # send_email_alert.delay() DOWNTIME
+        if send_alerts:
+            # send_email_alert.delay() DOWNTIME
+            pass
 
     @transition(field=status, source='DOWNTIME', target='RETRYING')
     def set_retrying(self):

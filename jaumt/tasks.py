@@ -1,6 +1,7 @@
 import requests
 
 from celery import shared_task
+from django.core.mail import send_mail
 
 
 @shared_task
@@ -15,8 +16,11 @@ def push_metrics(name, value, timestamp=None):
 
 
 @shared_task
-def send_email_alert(recipients, alert):
-    pass
+def send_email_alert(subject, message, from_email, recipient_list):
+    """ Recibe una tupla (subject, message, from_email, recipient_list)
+    y llama a send_mass_mail con la misma """
+    send_mail(subject, message, from_email, recipient_list)
+
 
 
 # Ejecutar tareas en grupo
