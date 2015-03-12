@@ -3,8 +3,6 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django_fsm import FSMField, transition
 
-from jaumt.tasks import http_get, send_email_alert
-
 
 class RecipientList(models.Model):
     description = models.CharField(max_length=300)
@@ -33,6 +31,7 @@ class Url(models.Model):
     hostname = models.URLField(null=True, blank=True)
     timeout = models.IntegerField(default=2000)
     response_ms_sla = models.IntegerField(default=200)
+    check_interval = models.IntegerField(default=60)
     no_cache = models.BooleanField(default=False, blank=True)
     match_text = models.CharField(max_length=100, null=True, blank=True)
     no_match_text = models.CharField(max_length=100, null=True, blank=True)
@@ -46,11 +45,14 @@ class Url(models.Model):
     current_status_code = models.IntegerField(null=True, editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(null=True, editable=False)
+    next_check = models.DateTimeField(null=True, editable=False)
     last_check_ok = models.DateTimeField('Last OK',
                                          null=True, editable=False)
     last_check_warn = models.DateTimeField('Last WARNING',
                                            null=True, editable=False)
     last_check_downtime = models.DateTimeField('Last DOWNTIME',
+                                               null=True, editable=False)
+    last_check_retrying = models.DateTimeField('Last RETRYING',
                                                null=True, editable=False)
 
     def __str__(self):
@@ -59,9 +61,10 @@ class Url(models.Model):
 
     def send_alerts(self):
         subject = '[{}] {}'.format(self.status, self.description)
-        message = "El sitio falló con el código {} \n {}".format(
-            self.current_status_code, self.alert_footer)  # TODO Poner esto como una config general
+        message = "HTTP Status code: {} \n {}".format(
+            self.current_status_code, self.alert_footer)
         from_email = 'soporte@cmd.com.ar'
+        # FIXME Poner esto como una config general
         recipient_lists = []
         if len(self.recipients_list.all()) > 0:
             # if url has a recipient_list use it
@@ -74,18 +77,21 @@ class Url(models.Model):
                 for user in recipient.recipients.all():
                     recipient_lists.append(user.email)
 
+        # Deleting duplicateds
+        recipient_lists = list(set(recipient_lists))
+        from jaumt.tasks import send_email_alert
         send_email_alert.delay(subject, message, from_email, recipient_lists)
 
     def check_url(self):
         """ Call http_get task and sets handle_status as callback. """
-        http_get.apply_async((self.id), link=self.handle_status())
+        from jaumt.tasks import http_get
+        http_get.delay(self.pk)
 
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
     def set_ok(self, send_alerts=False):
         self.last_check_ok = timezone.now()
         if send_alerts:
-            # send_email_alert.delay() OK
-            pass
+            self.send_alerts()
 
     @transition(field=status, source='OK', target='WARNING')
     def set_warning(self):
@@ -95,12 +101,11 @@ class Url(models.Model):
     def set_downtime(self, send_alerts=True):
         self.last_check_error = timezone.now()
         if send_alerts:
-            # send_email_alert.delay() DOWNTIME
-            pass
+            self.send_alerts()
 
     @transition(field=status, source='DOWNTIME', target='RETRYING')
     def set_retrying(self):
-        pass
+        self.last_check_retrying = timezone.now()
 
     def handle_status(self, response):
         self.current_status_code = response.status_code
@@ -119,7 +124,7 @@ class Url(models.Model):
                 self.set_downtime(send_alerts=True)
             elif self.status == "RETRYING":
                 self.set_downtime()
-
-
+        # save changes
+        self.save()
         # send to graphite status_code, response_time, size, etc
         # push_metrics.delay()

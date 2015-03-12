@@ -3,11 +3,14 @@ import requests
 from celery import shared_task
 from django.core.mail import send_mail
 
+from jaumt.models import Url
+
 
 @shared_task
-def http_get(url):
-    response = requests.get(url)
-    return response
+def http_get(url_pk):
+    url = Url.objects.get(pk=url_pk)
+    response = requests.get(url.url)
+    url.handle_status(response)
 
 
 @shared_task

@@ -8,6 +8,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.7/ref/settings/
 """
 
+from django.conf import global_settings
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -39,6 +41,7 @@ INSTALLED_APPS = (
     'jaumt',
     # contrib
     'django_fsm',
+    'fsm_admin',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -79,6 +82,11 @@ USE_L10N = True
 
 USE_TZ = True
 
+# needed by fsm-admin
+TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
+    'django.core.context_processors.request',
+)
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
@@ -90,6 +98,8 @@ BROKER_URL = 'amqp://guest:guest@localhost//'
 #CELERY_ACCEPT_CONTENT = ['json']
 #CELERY_TASK_SERIALIZER = 'json'
 #CELERY_RESULT_SERIALIZER = 'json'
+
+
 
 try:
     from .local_settings import *
