@@ -2,6 +2,7 @@ import requests
 
 from celery import shared_task
 from django.core.mail import send_mail
+from django.utils import timezone
 
 from jaumt.models import Url
 
@@ -25,10 +26,7 @@ def send_email_alert(subject, message, from_email, recipient_list):
     send_mail(subject, message, from_email, recipient_list)
 
 
-
-# Ejecutar tareas en grupo
-# from jaumt.models import Url
-# from celery import group
-# from jaumt.tasks import check_url
-# g = group([check_url.s(url.pk) for url in Url.objects.all()])
-# g.apply_async()
+@shared_task
+def queue_checks():
+    for url in Url.objects.filter(next_check__lte=timezone.now()):
+        url.check_url()

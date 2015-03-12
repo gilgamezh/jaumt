@@ -44,8 +44,10 @@ class Url(models.Model):
     status = FSMField(default='OK', protected=True, editable=False)
     current_status_code = models.IntegerField(null=True, editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
-    last_check = models.DateTimeField(null=True, editable=False)
-    next_check = models.DateTimeField(null=True, editable=False)
+    last_check = models.DateTimeField(null=True, editable=False,
+                                      auto_now_add=True)
+    next_check = models.DateTimeField(null=True, editable=False,
+                                      auto_now_add=True)
     last_check_ok = models.DateTimeField('Last OK',
                                          null=True, editable=False)
     last_check_warn = models.DateTimeField('Last WARNING',
@@ -90,35 +92,52 @@ class Url(models.Model):
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
     def set_ok(self, send_alerts=False):
         self.last_check_ok = timezone.now()
+        self.next_check = (
+            timezone.now() + timezone.timedelta(seconds=self.check_interval))
         if send_alerts:
             self.send_alerts()
 
     @transition(field=status, source='OK', target='WARNING')
     def set_warning(self):
         self.last_check_warn = timezone.now()
+        self.next_check = (
+            timezone.now() + timezone.timedelta(seconds=self.check_interval/4))
 
-    @transition(field=status, source=['RETRYING', 'WARNING'], target='DOWNTIME')
+    @transition(field=status, source=['RETRYING', 'WARNING'],
+                target='DOWNTIME')
     def set_downtime(self, send_alerts=True):
         self.last_check_error = timezone.now()
+        self.next_check = (
+            timezone.now() + timezone.timedelta(seconds=self.check_interval/2))
         if send_alerts:
             self.send_alerts()
 
     @transition(field=status, source='DOWNTIME', target='RETRYING')
     def set_retrying(self):
         self.last_check_retrying = timezone.now()
+        self.next_check = (
+            timezone.now() + timezone.timedelta(seconds=self.check_interval/4))
 
     def handle_status(self, response):
         self.current_status_code = response.status_code
         self.last_check = timezone.now()
         if response.ok:
-            if self.status == "WARNING":
+            if self.status == 'OK':
+                self.next_check = (
+                    timezone.now() + timezone.timedelta(
+                        seconds=self.check_interval))
+            elif self.status == "WARNING":
                 self.set_ok()
             elif self.status == "RETRYING":
                 self.set_ok(send_alerts=True)
             elif self.status == "DOWNTIME":
                 self.set_retrying()
         else:
-            if self.status == "OK":
+            if self.status == 'DOWNTIME':
+                self.next_check = (
+                    timezone.now() + timezone.timedelta(
+                        seconds=self.check_interval/2))
+            elif self.status == "OK":
                 self.set_warning()
             elif self.status == "WARNING":
                 self.set_downtime(send_alerts=True)

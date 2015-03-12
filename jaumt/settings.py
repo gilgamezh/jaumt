@@ -8,6 +8,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.7/ref/settings/
 """
 
+from datetime import timedelta
 from django.conf import global_settings
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -99,6 +100,13 @@ BROKER_URL = 'amqp://guest:guest@localhost//'
 #CELERY_TASK_SERIALIZER = 'json'
 #CELERY_RESULT_SERIALIZER = 'json'
 
+CELERYBEAT_SCHEDULE = {
+    'queue-every-5-seconds': {
+            'task': 'jaumt.tasks.queue_checks',
+            'schedule': timedelta(seconds=5),
+        },
+}
+CELERY_TIMEZONE = 'UTC'
 
 
 try:
