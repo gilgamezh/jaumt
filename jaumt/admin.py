@@ -12,7 +12,8 @@ class WebsiteAdmin(admin.ModelAdmin):
 #class UrlAdmin(FSMTransitionMixin, admin.ModelAdmin):
 class UrlAdmin(admin.ModelAdmin):
     list_display = ('website', 'description', 'url', 'status',
-                    'enabled', 'last_check', 'next_check')
+                    'current_status_code', 'enabled', 'last_check',
+                    'next_check')
     list_filter = ['website', 'status']
     #fsm_field = ['status',]
 

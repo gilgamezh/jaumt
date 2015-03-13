@@ -42,12 +42,11 @@ class Url(models.Model):
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
     status = FSMField(default='OK', protected=True, editable=False)
-    current_status_code = models.IntegerField(null=True, editable=False)
+    current_status_code = models.CharField(max_length=300,null=True,
+                                           editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
-    last_check = models.DateTimeField(null=True, editable=False,
-                                      auto_now_add=True)
-    next_check = models.DateTimeField(null=True, editable=False,
-                                      auto_now_add=True)
+    last_check = models.DateTimeField(editable=False, auto_now_add=True)
+    next_check = models.DateTimeField(editable=False, auto_now_add=True)
     last_check_ok = models.DateTimeField('Last OK',
                                          null=True, editable=False)
     last_check_warn = models.DateTimeField('Last WARNING',
@@ -87,7 +86,7 @@ class Url(models.Model):
     def check_url(self):
         """ Call http_get task and sets handle_status as callback. """
         from jaumt.tasks import http_get
-        http_get.delay(self.pk)
+        http_get(self.pk)
 
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
     def set_ok(self, send_alerts=False):
@@ -101,14 +100,16 @@ class Url(models.Model):
     def set_warning(self):
         self.last_check_warn = timezone.now()
         self.next_check = (
-            timezone.now() + timezone.timedelta(seconds=self.check_interval/4))
+            timezone.now() + timezone.timedelta(
+                seconds=self.check_interval / 4))
 
     @transition(field=status, source=['RETRYING', 'WARNING'],
                 target='DOWNTIME')
     def set_downtime(self, send_alerts=True):
         self.last_check_error = timezone.now()
         self.next_check = (
-            timezone.now() + timezone.timedelta(seconds=self.check_interval/2))
+            timezone.now() + timezone.timedelta(
+                seconds=self.check_interval / 2))
         if send_alerts:
             self.send_alerts()
 
@@ -116,12 +117,17 @@ class Url(models.Model):
     def set_retrying(self):
         self.last_check_retrying = timezone.now()
         self.next_check = (
-            timezone.now() + timezone.timedelta(seconds=self.check_interval/4))
+            timezone.now() + timezone.timedelta(
+                seconds=self.check_interval / 4))
 
-    def handle_status(self, response):
-        self.current_status_code = response.status_code
+    def handle_status(self, response=None, is_error=False, error_msg=None):
         self.last_check = timezone.now()
-        if response.ok:
+        if is_error:
+            self.current_status_code = str(error_msg)
+        else:
+            self.current_status_code = str(response.status_code)
+        # if no is_error and status_code < 400
+        if not is_error and response.ok:
             if self.status == 'OK':
                 self.next_check = (
                     timezone.now() + timezone.timedelta(
@@ -134,16 +140,14 @@ class Url(models.Model):
                 self.set_retrying()
         else:
             if self.status == 'DOWNTIME':
-                self.next_check = (
-                    timezone.now() + timezone.timedelta(
-                        seconds=self.check_interval/2))
+                self.next_check = (timezone.now() + timezone.timedelta(
+                    seconds=self.check_interval / 2))
             elif self.status == "OK":
                 self.set_warning()
             elif self.status == "WARNING":
                 self.set_downtime(send_alerts=True)
             elif self.status == "RETRYING":
                 self.set_downtime()
-        # save changes
         self.save()
         # send to graphite status_code, response_time, size, etc
         # push_metrics.delay()
