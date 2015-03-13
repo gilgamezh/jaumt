@@ -86,7 +86,7 @@ class Url(models.Model):
     def check_url(self):
         """ Call http_get task and sets handle_status as callback. """
         from jaumt.tasks import http_get
-        http_get(self.pk)
+        http_get.delay(self.pk)
 
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
     def set_ok(self, send_alerts=False):
