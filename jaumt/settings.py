@@ -94,35 +94,53 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
 
 STATIC_URL = '/static/'
 
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': "*** jaumt ***  %(asctime)s  %(name)-18s %(levelname)-8s %(message)s",
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s.%(funcName)s: %(message)s'
+        },
+        'colorful': {
+            'format': '%(log_color)s%(levelname)s \033[1;35m%(name)s.\033[0m%(funcName)s %(message)s',
+            '()': 'colorlog.ColoredFormatter',
+            'log_colors': {
+                'DEBUG':    'bold_black',
+                'INFO':     'white',
+                'WARNING':  'yellow',
+                'ERROR':    'red',
+                'CRITICAL': 'bold_red',
+            },
         },
     },
     'handlers': {
-        'file': {
-            'level': 'INFO',
+        'default': {
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': '/tmp/jaumt.log',
-            'formatter': 'verbose'
+            'formatter': 'standard',
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'propagate': True,
-            'level': 'INFO',
+        '': {
+            'handlers': ['default'],
+            'level': 'DEBUG',
+            'propagate': True
         },
         'jaumt': {
-            'handlers': ['file'],
-            'level': 'INFO',
+            'handlers': ['default'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'django.db.backends': {
+            'handlers': ['default'],
+            'level': 'DEBUG',  # see all queries on DEV
+            'propagate': False
         },
     }
 }
+
+
 
 # Celery settings
 BROKER_URL = 'amqp://guest:guest@localhost//'

@@ -61,8 +61,11 @@ class Url(models.Model):
                                                   self.status)
 
     def send_alerts(self):
-        subject = '[{}] {}'.format(self.status, self.description)
-        message = "HTTP Status code: {} \n {}".format(
+        if self.status == 'WARNING':
+            subject = '[Jaumt][ERROR] {}'.format(self.description)
+        else:
+            subject = '[Jaumt][OK] {}'.format(self.description)
+        message = "{} \n {}".format(
             self.current_status_code, self.alert_footer)
         from_email = 'soporte@cmd.com.ar'
         # FIXME Poner esto como una config general
