@@ -28,7 +28,7 @@ class Url(models.Model):
     description = models.CharField(max_length=140)
     website = models.ForeignKey(Website, related_name='urls')
     url = models.URLField()
-    hostname = models.URLField(null=True, blank=True)
+    hostname = models.CharField(max_length=500, null=True, blank=True)
     timeout = models.IntegerField(default=2000)
     response_ms_sla = models.IntegerField(default=200)
     check_interval = models.IntegerField(default=60)
@@ -42,7 +42,7 @@ class Url(models.Model):
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
     status = FSMField(default='OK', protected=True, editable=False)
-    current_status_code = models.CharField(max_length=300,null=True,
+    current_status_code = models.CharField(max_length=300, null=True,
                                            editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(editable=False, auto_now_add=True)
@@ -120,14 +120,35 @@ class Url(models.Model):
             timezone.now() + timezone.timedelta(
                 seconds=self.check_interval / 4))
 
-    def handle_status(self, response=None, is_error=False, error_msg=None):
+    def handle_response(self, response=None, is_error=False, error_msg=None):
         self.last_check = timezone.now()
-        if is_error:
-            self.current_status_code = str(error_msg)
+        if not is_error:
+            if response.ok:
+                if (self.match_text != '' and
+                    self.match_text not in response.text):
+                    current_status_code = 'match_text not found'
+                    is_error = True
+                elif (self.no_match_text != '' and
+                      self.no_match_text in response.text):
+                    current_status_code = 'no_match_text found'
+                    is_error = True
+                else:
+                    current_status_code = '{}'.format(response.status_code)
+                    is_error = False
+
+            else:
+                current_status_code = '{}'.format(
+                    response.status_code)
+                is_error = True
         else:
-            self.current_status_code = str(response.status_code)
-        # if no is_error and status_code < 400
-        if not is_error and response.ok:
+            current_status_code = 'Exception: {}'.format(error_msg)
+            is_error = True
+
+        self.update_status(is_error, current_status_code)
+
+    def update_status(self, is_error=False, current_status_code=None):
+        self.current_status_code = current_status_code
+        if not is_error:
             if self.status == 'OK':
                 self.next_check = (
                     timezone.now() + timezone.timedelta(

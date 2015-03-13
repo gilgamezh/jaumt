@@ -94,6 +94,36 @@ TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
 
 STATIC_URL = '/static/'
 
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': "*** jaumt ***  %(asctime)s  %(name)-18s %(levelname)-8s %(message)s",
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': '/tmp/jaumt.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'propagate': True,
+            'level': 'INFO',
+        },
+        'jaumt': {
+            'handlers': ['file'],
+            'level': 'INFO',
+        },
+    }
+}
+
 # Celery settings
 BROKER_URL = 'amqp://guest:guest@localhost//'
 #CELERY_ACCEPT_CONTENT = ['json']
