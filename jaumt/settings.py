@@ -99,26 +99,22 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'standard': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s.%(funcName)s: %(message)s'
-        },
-        'colorful': {
-            'format': '%(log_color)s%(levelname)s \033[1;35m%(name)s.\033[0m%(funcName)s %(message)s',
-            '()': 'colorlog.ColoredFormatter',
-            'log_colors': {
-                'DEBUG':    'bold_black',
-                'INFO':     'white',
-                'WARNING':  'yellow',
-                'ERROR':    'red',
-                'CRITICAL': 'bold_red',
-            },
-        },
+            'format': ('%(asctime)s  [%(levelname)s] '
+                       ' %(name)s.%(funcName)s:  %(message)s')
+        }
     },
     'handlers': {
         'default': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
+            'filename': '/tmp/jaumt_django.log',
+            'formatter': 'standard'
+        },
+        'jaumt': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
             'filename': '/tmp/jaumt.log',
-            'formatter': 'standard',
+            'formatter': 'standard'
         },
     },
     'loggers': {
@@ -126,12 +122,12 @@ LOGGING = {
             'handlers': ['default'],
             'level': 'DEBUG',
             'propagate': True
-        },
+            },
         'jaumt': {
-            'handlers': ['default'],
+            'handlers': ['jaumt'],
             'level': 'DEBUG',
             'propagate': True
-        },
+            },
         'django.db.backends': {
             'handlers': ['default'],
             'level': 'DEBUG',  # see all queries on DEV
@@ -141,12 +137,11 @@ LOGGING = {
 }
 
 
-
 # Celery settings
 BROKER_URL = 'amqp://guest:guest@localhost//'
-#CELERY_ACCEPT_CONTENT = ['json']
-#CELERY_TASK_SERIALIZER = 'json'
-#CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
 
 CELERYBEAT_SCHEDULE = {
     'queue-every-5-seconds': {
