@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     # contrib
     'django_fsm',
     'fsm_admin',
+    'django_extensions'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -73,7 +74,7 @@ DATABASES = {
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es_AR'
 
 TIME_ZONE = 'America/Buenos_Aires'
 

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User
 from django_fsm import FSMField, transition
 
@@ -38,7 +39,8 @@ class Url(models.Model):
     recipients_list = models.ManyToManyField(RecipientList,
                                              blank=True,
                                              null=True)
-    alert_footer = models.CharField(max_length=500, blank=True)
+    alert_footer = models.TextField(blank=True, help_text=_(
+        "Custom text that will be attached at the alert message"))
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
     status = FSMField(default='OK', protected=True, editable=False)
