@@ -1,8 +1,12 @@
+import logging
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User
 from django_fsm import FSMField, transition
+
+logger = logging.getLogger(__name__)
 
 
 class RecipientList(models.Model):
@@ -100,6 +104,10 @@ class Url(models.Model):
             timezone.now() + timezone.timedelta(seconds=self.check_interval))
         if send_alerts:
             self.send_alerts()
+            logger.info("Sending OK alerts for %s. next_check: %s", self.url)
+        logger.info("%s current status: OK . Next Check: %s",
+                    self.url, self.next_check)
+
 
     @transition(field=status, source='OK', target='WARNING')
     def set_warning(self):
@@ -107,6 +115,8 @@ class Url(models.Model):
         self.next_check = (
             timezone.now() + timezone.timedelta(
                 seconds=self.check_interval / 4))
+        logger.info("%s current status: WARNING . Next Check: %s",
+                    self.url, self.next_check)
 
     @transition(field=status, source=['RETRYING', 'WARNING'],
                 target='DOWNTIME')
@@ -117,6 +127,10 @@ class Url(models.Model):
                 seconds=self.check_interval / 2))
         if send_alerts:
             self.send_alerts()
+            logger.info("Sending DOWNTIME alerts for %s. next_check: %s",
+                        self.url)
+        logger.info("%s current status: DOWNTIME . Next Check: %s",
+                    self.url, self.next_check)
 
     @transition(field=status, source='DOWNTIME', target='RETRYING')
     def set_retrying(self):
@@ -124,13 +138,17 @@ class Url(models.Model):
         self.next_check = (
             timezone.now() + timezone.timedelta(
                 seconds=self.check_interval / 4))
+        logger.info("%s current status: RETRYING. Next Check: %s",
+                    self.url, self.next_check)
 
     def handle_response(self, response=None, is_error=False, error_msg=None):
+        logger.debug(
+            "Handling response is_error: %s error_msg: %s response: %s",
+            is_error, error_msg, response)
         self.last_check = timezone.now()
         if not is_error:
             if response.ok:
-                if (self.match_text != '' and
-                    self.match_text not in response.text):
+                if (self.match_text != '' and self.match_text not in response.text):
                     current_status_code = 'match_text not found'
                     is_error = True
                 elif (self.no_match_text != '' and
@@ -152,12 +170,16 @@ class Url(models.Model):
         self.update_status(is_error, current_status_code)
 
     def update_status(self, is_error=False, current_status_code=None):
+        logger.debug("Updating status: is_error: %s, current_status_code: %s",
+                     is_error, current_status_code)
         self.current_status_code = current_status_code
         if not is_error:
             if self.status == 'OK':
                 self.next_check = (
                     timezone.now() + timezone.timedelta(
                         seconds=self.check_interval))
+                logger.info("%s current status: OK. Next Check: %s",
+                            self.url, self.next_check)
             elif self.status == "WARNING":
                 self.set_ok()
             elif self.status == "RETRYING":
@@ -168,6 +190,8 @@ class Url(models.Model):
             if self.status == 'DOWNTIME':
                 self.next_check = (timezone.now() + timezone.timedelta(
                     seconds=self.check_interval / 2))
+                logger.info("%s current status: DOWNTIME. Next Check: %s",
+                            self.url, self.next_check)
             elif self.status == "OK":
                 self.set_warning()
             elif self.status == "WARNING":
