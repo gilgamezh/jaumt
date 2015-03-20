@@ -153,6 +153,6 @@ CELERY_TIMEZONE = 'UTC'
 
 
 try:
-    from .local_settings import *
+    from .local_settings import *  # NOQA
 except:
     pass
