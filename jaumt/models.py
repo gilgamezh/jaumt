@@ -27,8 +27,10 @@ logger = logging.getLogger(__name__)
 
 
 class RecipientList(models.Model):
-    description = models.CharField(max_length=300, help_text=_("Human readable description for a recipient list"))
-    recipients = models.ManyToManyField(User, help_text=_("A list of Jaumt users that are member of this list"))
+    description = models.CharField(
+        max_length=300, help_text=_("Human readable description for a recipient list"))
+    recipients = models.ManyToManyField(
+        User, help_text=_("A list of Jaumt users that are member of this list"))
 
     def __str__(self):
         return self.description
@@ -39,9 +41,10 @@ class Website(models.Model):
     description = models.CharField(max_length=140,)
     enabled = models.BooleanField(default=False, blank=True)
     owner = models.ForeignKey(User)
-    recipients_list = models.ManyToManyField(RecipientList, help_text=_("A list of users that will receive alerts"
-                                                                        " and notifications for this website")
-                                             )
+    recipients_list = models.ManyToManyField(
+        RecipientList, help_text=_("A list of users that will receive alerts and notifications "
+                                   " for this website")
+    )
 
     def __str__(self):
         return self.name
@@ -49,28 +52,35 @@ class Website(models.Model):
 
 class Url(models.Model):
     """ An Url to check """
-    description = models.CharField(max_length=140, help_text=_(""" Details about the URL that Jaumt will check.
-                                                               This description will be used to identify the URL on
-                                                               all the alerts and metrics. \n
-                                                               e.g.: 'Gilgamezh's blog home' \n
-                                                                     'Gilgamezh's blog. webserver1'  """))
+    description = models.CharField(
+        max_length=140, help_text=_(""" Details about the URL that Jaumt will check. This
+                                    description will be used to identify the URL on all the
+                                    alerts and metrics.
+                                    e.g.: 'Gilgamezh's blog home'
+                                    'Gilgamezh's blog. webserver1'  """))
     website = models.ForeignKey(Website, related_name='urls')
     url = models.URLField(help_text=_("Url to check"))
-    hostname = models.CharField(max_length=500, null=True, blank=True, help_text=_("Host header for the request"))
+    hostname = models.CharField(
+        max_length=500, null=True, blank=True, help_text=_("Host header for the request"))
     timeout = models.IntegerField(default=3, help_text=_("Request timeout in seconds"))
-    response_ms_sla = models.IntegerField(default=200, help_text=_("Expected response in milliseconds A.K.A. SLA"))
-    check_interval = models.IntegerField(default=120, help_text=_("Default interval's check in seconds"))
+    response_ms_sla = models.IntegerField(
+        default=200, help_text=_("Expected response in milliseconds A.K.A. SLA"))
+    check_interval = models.IntegerField(
+        default=120, help_text=_("Default interval's check in seconds"))
     no_cache = models.BooleanField(
-        default=False, blank=True, help_text=_(""" If you check this option a query string argument named 'jaumt'
-                                               with a random string will be passed to the url.\n
-                                               e.g.: example.com?jaumt=nbvli959NoLXKFGuCj40sbkf9dBXAr7tKPPxlOwN5C """))
+        default=False, blank=True, help_text=_(""" If you check this option a query string argument
+                                               named 'jaumt' with a random string will be passed
+                                               to the url.\n
+                                               e.g.: example.com?jaumt=nbvli959NoLXKFGuCj40 """))
     match_text = models.CharField(
-        max_length=100, null=True, blank=True, help_text=_("This text have to exist in de response content."))
-    no_match_text = models.CharField(max_length=100, null=True, blank=True, help_text=_("The opposite to match_text"))
+        max_length=100, null=True, blank=True, help_text=_(
+            "This text have to exist in de response content."))
+    no_match_text = models.CharField(
+        max_length=100, null=True, blank=True, help_text=_("The opposite to match_text"))
     recipients_list = models.ManyToManyField(
-        RecipientList, blank=True, null=True, help_text=_(""" By default the website recipient list will be used. If
-                                                          you select at least one here the default will be
-                                                          overwritten"""))
+        RecipientList, blank=True, null=True, help_text=_(""" By default the website recipient list
+                                                          will be used. If you select at least one
+                                                          here the default will be overwritten"""))
     alert_footer = models.TextField(blank=True, help_text=_(
         "This text will be attached on the alert message. Use it to link your documentation ;)."))
     enabled = models.BooleanField(default=False, blank=True)
