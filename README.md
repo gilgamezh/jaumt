@@ -2,6 +2,9 @@ JAUMT
 ===================
 Jaumt is Just Another Uptime Monitoring Tool
 --------------------------------------------
+
+[![Build Status](https://travis-ci.org/gilgamezh/jaumt.svg?branch=master)](https://travis-ci.org/gilgamezh/jaumt)
+
 Jaumt is the result of the final project for the Introduction to Python course by @facundobatista. 
 http://www.taniquetil.com.ar/facundo/cursosAbiertos.html
 
