@@ -1,8 +1,14 @@
 language: python
 python:
-  - "3.3"
   - "3.4"
 # command to install dependencies
-install: "pip install -r requirements.txt"
+install: 
+    - "pip install -r requirements.txt"
+    - "pip install flake8"
+
+before_script:
+    - "flake8 jaumt --max-line-length=99 --exclude='jaumt/migrations'"
 # command to run tests 
-script: tests
+script: 
+    - "python3 manage.py test"
+
