@@ -97,12 +97,12 @@ class Url(models.Model):
 
         # Deleting duplicateds
         recipient_lists = list(set(recipient_lists))
-        from jaumt.tasks import send_email_alert
+        from jaumt.tasks import send_email_alert  # NOQA
         send_email_alert.delay(subject, message, from_email, recipient_lists)
 
     def check_url(self):
         """ Call http_get task and sets handle_status as callback. """
-        from jaumt.tasks import http_get
+        from jaumt.tasks import http_get  # NOQA
         http_get.delay(self.pk)
 
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
