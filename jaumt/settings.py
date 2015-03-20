@@ -100,8 +100,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'standard': {
-            'format': ('%(asctime)s  [%(levelname)s] '
-                       ' %(name)s.%(funcName)s:  %(message)s')
+            'format': ('%(asctime)s  [%(levelname)s] %(name)s.%(funcName)s:  %(message)s')
         }
     },
     'handlers': {
@@ -123,12 +122,12 @@ LOGGING = {
             'handlers': ['default'],
             'level': 'DEBUG',
             'propagate': True
-            },
+        },
         'jaumt': {
             'handlers': ['jaumt'],
             'level': 'DEBUG',
             'propagate': True
-            },
+        },
         'django.db.backends': {
             'handlers': ['default'],
             'level': 'DEBUG',  # see all queries on DEV
@@ -146,9 +145,9 @@ BROKER_URL = 'amqp://guest:guest@localhost//'
 
 CELERYBEAT_SCHEDULE = {
     'queue-every-5-seconds': {
-            'task': 'jaumt.tasks.queue_checks',
-            'schedule': timedelta(seconds=5),
-        },
+        'task': 'jaumt.tasks.queue_checks',
+        'schedule': timedelta(seconds=5),
+    },
 }
 CELERY_TIMEZONE = 'UTC'
 

@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Copyright 2015 Nicolás Demarchi
+
+set -eu
+
+if [ $# -ne 0 ]; then
+    TARGET="$@"
+else
+    TARGET="jaumt"
+fi
+
+#nosetests3 -v -s $TARGET
+python3 manage.py test
+flake8 $TARGET --max-line-length=99 --exclude="jaumt/migrations"

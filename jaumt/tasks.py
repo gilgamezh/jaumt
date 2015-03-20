@@ -1,3 +1,20 @@
+# Copyright 2015 Nicolás Demarchi
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General
+# Public License version 3, as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranties of
+# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.
+# If not, see <http://www.gnu.org/licenses/>.
+#
+# For further info, check  https://github.com/gilgamezh/jaumt
+
 import requests
 import logging
 
@@ -25,14 +42,12 @@ def http_get(url_pk):
     try:
         logger.info("Checking %s, No Cache: %s Headers: %s Timeout: %s",
                     url.url, url.no_cache, headers, url.timeout)
-        response = requests.get(url.url, params=payload, headers=headers,
-                                timeout=url.timeout)
+        response = requests.get(url.url, params=payload, headers=headers, timeout=url.timeout)
         logger.debug("Response: Headers: %s HTTP_status_code: %s",
                      response.headers, response.status_code)
         url.handle_response(response)
     except requests.exceptions.RequestException as error:
-        url.handle_response(response=None, is_error=True,
-                            error_msg=str(error))
+        url.handle_response(response=None, is_error=True, error_msg=str(error))
         logger.error('Request to %s failed with error: %s', url.url, error)
 
 
@@ -45,8 +60,7 @@ def push_metrics(name, value, timestamp=None):
 def send_email_alert(subject, message, from_email, recipient_list):
     """ Recibe una tupla (subject, message, from_email, recipient_list)
     y llama a send_mass_mail con la misma """
-    logger.debug("Sending alert to %s with subject: %s",
-                 recipient_list, subject)
+    logger.debug("Sending alert to %s with subject: %s", recipient_list, subject)
     send_mail(subject, message, from_email, recipient_list)
 
 

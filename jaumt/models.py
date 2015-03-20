@@ -1,3 +1,20 @@
+# Copyright 2015 Nicolás Demarchi
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General
+# Public License version 3, as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranties of
+# MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.
+# If not, see <http://www.gnu.org/licenses/>.
+#
+# For further info, check  https://github.com/gilgamezh/jaumt
+
 import logging
 
 from django.db import models
@@ -40,39 +57,30 @@ class Url(models.Model):
     no_cache = models.BooleanField(default=False, blank=True)
     match_text = models.CharField(max_length=100, null=True, blank=True)
     no_match_text = models.CharField(max_length=100, null=True, blank=True)
-    recipients_list = models.ManyToManyField(RecipientList,
-                                             blank=True,
-                                             null=True)
+    recipients_list = models.ManyToManyField(RecipientList, blank=True, null=True)
     alert_footer = models.TextField(blank=True, help_text=_(
         "Custom text that will be attached at the alert message"))
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
     status = FSMField(default='OK', protected=True, editable=False)
-    current_status_code = models.CharField(max_length=300, null=True,
-                                           editable=False)
+    current_status_code = models.CharField(max_length=300, null=True, editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(editable=False, auto_now_add=True)
     next_check = models.DateTimeField(editable=False, auto_now_add=True)
-    last_check_ok = models.DateTimeField('Last OK',
-                                         null=True, editable=False)
-    last_check_warn = models.DateTimeField('Last WARNING',
-                                           null=True, editable=False)
-    last_check_downtime = models.DateTimeField('Last DOWNTIME',
-                                               null=True, editable=False)
-    last_check_retrying = models.DateTimeField('Last RETRYING',
-                                               null=True, editable=False)
+    last_check_ok = models.DateTimeField('Last OK', null=True, editable=False)
+    last_check_warn = models.DateTimeField('Last WARNING', null=True, editable=False)
+    last_check_downtime = models.DateTimeField('Last DOWNTIME', null=True, editable=False)
+    last_check_retrying = models.DateTimeField('Last RETRYING', null=True, editable=False)
 
     def __str__(self):
-        return "{} - Last Check {} - {}. ".format(self.url, self.last_check,
-                                                  self.status)
+        return "{} - Last Check {} - {}. ".format(self.url, self.last_check, self.status)
 
     def send_alerts(self):
         if self.status == 'WARNING':
             subject = '[Jaumt][ERROR] {}'.format(self.description)
         else:
             subject = '[Jaumt][OK] {}'.format(self.description)
-        message = "{} \n {}".format(
-            self.current_status_code, self.alert_footer)
+        message = "{} \n {}".format(self.current_status_code, self.alert_footer)
         from_email = 'soporte@cmd.com.ar'
         # FIXME Poner esto como una config general
         recipient_lists = []
@@ -100,59 +108,44 @@ class Url(models.Model):
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
     def set_ok(self, send_alerts=False):
         self.last_check_ok = timezone.now()
-        self.next_check = (
-            timezone.now() + timezone.timedelta(seconds=self.check_interval))
+        self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval))
         if send_alerts:
             self.send_alerts()
             logger.info("Sending OK alerts for %s. next_check: %s", self.url)
-        logger.info("%s current status: OK . Next Check: %s",
-                    self.url, self.next_check)
-
+        logger.info("%s current status: OK . Next Check: %s", self.url, self.next_check)
 
     @transition(field=status, source='OK', target='WARNING')
     def set_warning(self):
         self.last_check_warn = timezone.now()
         self.next_check = (
-            timezone.now() + timezone.timedelta(
-                seconds=self.check_interval / 4))
-        logger.info("%s current status: WARNING . Next Check: %s",
-                    self.url, self.next_check)
+            timezone.now() + timezone.timedelta(seconds=self.check_interval / 4))
+        logger.info("%s current status: WARNING . Next Check: %s", self.url, self.next_check)
 
-    @transition(field=status, source=['RETRYING', 'WARNING'],
-                target='DOWNTIME')
+    @transition(field=status, source=['RETRYING', 'WARNING'], target='DOWNTIME')
     def set_downtime(self, send_alerts=True):
         self.last_check_error = timezone.now()
-        self.next_check = (
-            timezone.now() + timezone.timedelta(
-                seconds=self.check_interval / 2))
+        self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval / 2))
         if send_alerts:
             self.send_alerts()
-            logger.info("Sending DOWNTIME alerts for %s. next_check: %s",
-                        self.url)
-        logger.info("%s current status: DOWNTIME . Next Check: %s",
-                    self.url, self.next_check)
+            logger.info("Sending DOWNTIME alerts for %s. next_check: %s", self.url)
+        logger.info("%s current status: DOWNTIME . Next Check: %s", self.url, self.next_check)
 
     @transition(field=status, source='DOWNTIME', target='RETRYING')
     def set_retrying(self):
         self.last_check_retrying = timezone.now()
-        self.next_check = (
-            timezone.now() + timezone.timedelta(
-                seconds=self.check_interval / 4))
-        logger.info("%s current status: RETRYING. Next Check: %s",
-                    self.url, self.next_check)
+        self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval / 4))
+        logger.info("%s current status: RETRYING. Next Check: %s", self.url, self.next_check)
 
     def handle_response(self, response=None, is_error=False, error_msg=None):
-        logger.debug(
-            "Handling response is_error: %s error_msg: %s response: %s",
-            is_error, error_msg, response)
+        logger.debug("Handling response is_error: %s error_msg: %s response: %s",
+                     is_error, error_msg, response)
         self.last_check = timezone.now()
         if not is_error:
             if response.ok:
                 if (self.match_text != '' and self.match_text not in response.text):
                     current_status_code = 'match_text not found'
                     is_error = True
-                elif (self.no_match_text != '' and
-                      self.no_match_text in response.text):
+                elif (self.no_match_text != '' and self.no_match_text in response.text):
                     current_status_code = 'no_match_text found'
                     is_error = True
                 else:
@@ -160,8 +153,7 @@ class Url(models.Model):
                     is_error = False
 
             else:
-                current_status_code = '{}'.format(
-                    response.status_code)
+                current_status_code = '{}'.format(response.status_code)
                 is_error = True
         else:
             current_status_code = 'Exception: {}'.format(error_msg)
@@ -176,10 +168,8 @@ class Url(models.Model):
         if not is_error:
             if self.status == 'OK':
                 self.next_check = (
-                    timezone.now() + timezone.timedelta(
-                        seconds=self.check_interval))
-                logger.info("%s current status: OK. Next Check: %s",
-                            self.url, self.next_check)
+                    timezone.now() + timezone.timedelta(seconds=self.check_interval))
+                logger.info("%s current status: OK. Next Check: %s", self.url, self.next_check)
             elif self.status == "WARNING":
                 self.set_ok()
             elif self.status == "RETRYING":
@@ -188,10 +178,10 @@ class Url(models.Model):
                 self.set_retrying()
         else:
             if self.status == 'DOWNTIME':
-                self.next_check = (timezone.now() + timezone.timedelta(
-                    seconds=self.check_interval / 2))
-                logger.info("%s current status: DOWNTIME. Next Check: %s",
-                            self.url, self.next_check)
+                self.next_check = (
+                    timezone.now() + timezone.timedelta(seconds=self.check_interval / 2))
+                logger.info(
+                    "%s current status: DOWNTIME. Next Check: %s", self.url, self.next_check)
             elif self.status == "OK":
                 self.set_warning()
             elif self.status == "WARNING":
