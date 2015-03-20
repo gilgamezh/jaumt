@@ -1,0 +1,6 @@
+# Local settings 
+
+EMAIL_HOST = 'smtp.example.com'
+JAUMT_EMAIL_FROM =  'jaumt@example.com'
+JAUMT_EMAIL_PREFIX = '[Jaumt]'
+JAUMT_USER_AGENT = "User-Agent': 'Jaumt/0.1 (+http://jaumt.example.com)"
