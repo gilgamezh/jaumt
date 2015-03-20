@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = (
+    'django_admin_bootstrapped',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,7 +44,7 @@ INSTALLED_APPS = (
     # contrib
     'django_fsm',
     'fsm_admin',
-    'django_extensions'
+    'django_extensions',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -151,8 +152,12 @@ CELERYBEAT_SCHEDULE = {
 }
 CELERY_TIMEZONE = 'UTC'
 
+#  Django_admin_bootstrapped config
+DAB_FIELD_RENDERER = 'django_admin_bootstrapped.renderers.BootstrapFieldRenderer'
 
 try:
     from .local_settings import *  # NOQA
 except:
     pass
+
+
