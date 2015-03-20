@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class RecipientList(models.Model):
-    description = models.CharField(max_length=300)
-    recipients = models.ManyToManyField(User)
+    description = models.CharField(max_length=300, help_text=_("Human readable description for a recipient list"))
+    recipients = models.ManyToManyField(User, help_text=_("A list of Jaumt users that are member of this list"))
 
     def __str__(self):
         return self.description
@@ -36,30 +36,43 @@ class RecipientList(models.Model):
 
 class Website(models.Model):
     name = models.CharField(max_length=30, unique=True)
-    description = models.CharField(max_length=140)
+    description = models.CharField(max_length=140,)
     enabled = models.BooleanField(default=False, blank=True)
     owner = models.ForeignKey(User)
-    recipients_list = models.ManyToManyField(RecipientList)
+    recipients_list = models.ManyToManyField(RecipientList, help_text=_("A list of users that will receive alerts"
+                                                                        " and notifications for this website")
+                                             )
 
     def __str__(self):
         return self.name
 
 
 class Url(models.Model):
-    """ Url Object """
-    description = models.CharField(max_length=140)
+    """ An Url to check """
+    description = models.CharField(max_length=140, help_text=_(""" Details about the URL that Jaumt will check.
+                                                               This description will be used to identify the URL on
+                                                               all the alerts and metrics. \n
+                                                               e.g.: 'Gilgamezh's blog home' \n
+                                                                     'Gilgamezh's blog. webserver1'  """))
     website = models.ForeignKey(Website, related_name='urls')
-    url = models.URLField()
-    hostname = models.CharField(max_length=500, null=True, blank=True)
-    timeout = models.IntegerField(default=2000)
-    response_ms_sla = models.IntegerField(default=200)
-    check_interval = models.IntegerField(default=60)
-    no_cache = models.BooleanField(default=False, blank=True)
-    match_text = models.CharField(max_length=100, null=True, blank=True)
-    no_match_text = models.CharField(max_length=100, null=True, blank=True)
-    recipients_list = models.ManyToManyField(RecipientList, blank=True, null=True)
+    url = models.URLField(help_text=_("Url to check"))
+    hostname = models.CharField(max_length=500, null=True, blank=True, help_text=_("Host header for the request"))
+    timeout = models.IntegerField(default=3, help_text=_("Request timeout in seconds"))
+    response_ms_sla = models.IntegerField(default=200, help_text=_("Expected response in milliseconds A.K.A. SLA"))
+    check_interval = models.IntegerField(default=120, help_text=_("Default interval's check in seconds"))
+    no_cache = models.BooleanField(
+        default=False, blank=True, help_text=_(""" If you check this option a query string argument named 'jaumt'
+                                               with a random string will be passed to the url.\n
+                                               e.g.: example.com?jaumt=nbvli959NoLXKFGuCj40sbkf9dBXAr7tKPPxlOwN5C """))
+    match_text = models.CharField(
+        max_length=100, null=True, blank=True, help_text=_("This text have to exist in de response content."))
+    no_match_text = models.CharField(max_length=100, null=True, blank=True, help_text=_("The opposite to match_text"))
+    recipients_list = models.ManyToManyField(
+        RecipientList, blank=True, null=True, help_text=_(""" By default the website recipient list will be used. If
+                                                          you select at least one here the default will be
+                                                          overwritten"""))
     alert_footer = models.TextField(blank=True, help_text=_(
-        "Custom text that will be attached at the alert message"))
+        "This text will be attached on the alert message. Use it to link your documentation ;)."))
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
     status = FSMField(default='OK', protected=True, editable=False)
@@ -76,6 +89,7 @@ class Url(models.Model):
         return "{} - Last Check {} - {}. ".format(self.url, self.last_check, self.status)
 
     def send_alerts(self):
+        """ Send alerts for an Url """
         if self.status == 'WARNING':
             subject = '[Jaumt][ERROR] {}'.format(self.description)
         else:
@@ -101,12 +115,13 @@ class Url(models.Model):
         send_email_alert.delay(subject, message, from_email, recipient_lists)
 
     def check_url(self):
-        """ Call http_get task and sets handle_status as callback. """
+        """ Call the task to check an Url. """
         from jaumt.tasks import http_get  # NOQA
         http_get.delay(self.pk)
 
     @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
     def set_ok(self, send_alerts=False):
+        """ Transition to set the OK status and trigger all the related stuff to it """
         self.last_check_ok = timezone.now()
         self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval))
         if send_alerts:
@@ -116,6 +131,7 @@ class Url(models.Model):
 
     @transition(field=status, source='OK', target='WARNING')
     def set_warning(self):
+        """ Transition to set the WARNING  status and trigger all the related stuff to it """
         self.last_check_warn = timezone.now()
         self.next_check = (
             timezone.now() + timezone.timedelta(seconds=self.check_interval / 4))
@@ -123,6 +139,7 @@ class Url(models.Model):
 
     @transition(field=status, source=['RETRYING', 'WARNING'], target='DOWNTIME')
     def set_downtime(self, send_alerts=True):
+        """ Transition to set the DOWNTIME  status and trigger all the related stuff to it """
         self.last_check_error = timezone.now()
         self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval / 2))
         if send_alerts:
@@ -132,11 +149,13 @@ class Url(models.Model):
 
     @transition(field=status, source='DOWNTIME', target='RETRYING')
     def set_retrying(self):
+        """ Transition to set the RETRYING  status and trigger all the related stuff to it """
         self.last_check_retrying = timezone.now()
         self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval / 4))
         logger.info("%s current status: RETRYING. Next Check: %s", self.url, self.next_check)
 
     def handle_response(self, response=None, is_error=False, error_msg=None):
+        """ Receive a response object and decide if it is an error or not. """
         logger.debug("Handling response is_error: %s error_msg: %s response: %s",
                      is_error, error_msg, response)
         self.last_check = timezone.now()
@@ -162,6 +181,7 @@ class Url(models.Model):
         self.update_status(is_error, current_status_code)
 
     def update_status(self, is_error=False, current_status_code=None):
+        """ Update the Url status according to the current status"""
         logger.debug("Updating status: is_error: %s, current_status_code: %s",
                      is_error, current_status_code)
         self.current_status_code = current_status_code
