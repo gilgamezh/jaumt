@@ -22,6 +22,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User
 from django_fsm import FSMField, transition
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -100,13 +101,20 @@ class Url(models.Model):
 
     def send_alerts(self):
         """ Send alerts for an Url """
+        from_email = settings.JAUMT_EMAIL_FROM
         if self.status == 'WARNING':
-            subject = '[Jaumt][ERROR] {}'.format(self.description)
+            current_status = 'ERROR'
         else:
-            subject = '[Jaumt][OK] {}'.format(self.description)
-        message = "{} \n {}".format(self.current_status_code, self.alert_footer)
-        from_email = 'soporte@cmd.com.ar'
-        # FIXME Poner esto como una config general
+            current_status = 'OK'
+        subject = '{}[{}] {}'.format(settings.JAUMT_EMAIL_PREFIX, current_status, self.description)
+        message = ("""Current status for {} is: {} \n\r
+                   Url: {} \n\r
+                   Current http_status or error message: {} \n\r
+                   Last Check: {} \n\r
+                   Last Check OK: {} \n\r
+                   Url comments: \n\r
+                   {}""").format(self.description, current_status, self.current_status_code,
+                                 self.url, self.last_check, self.last_check_ok, self.alert_footer)
         recipient_lists = []
         if len(self.recipients_list.all()) > 0:
             # if url has a recipient_list use it
@@ -118,7 +126,6 @@ class Url(models.Model):
             for recipient in recipients.all():
                 for user in recipient.recipients.all():
                     recipient_lists.append(user.email)
-
         # Deleting duplicateds
         recipient_lists = list(set(recipient_lists))
         from jaumt.tasks import send_email_alert  # NOQA
@@ -136,7 +143,7 @@ class Url(models.Model):
         self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval))
         if send_alerts:
             self.send_alerts()
-            logger.info("Sending OK alerts for %s. next_check: %s", self.url)
+            logger.info("Sending OK alerts for %s", self.url)
         logger.info("%s current status: OK . Next Check: %s", self.url, self.next_check)
 
     @transition(field=status, source='OK', target='WARNING')
@@ -154,7 +161,7 @@ class Url(models.Model):
         self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval / 2))
         if send_alerts:
             self.send_alerts()
-            logger.info("Sending DOWNTIME alerts for %s. next_check: %s", self.url)
+            logger.info("Sending DOWNTIME alerts for %s.", self.url)
         logger.info("%s current status: DOWNTIME . Next Check: %s", self.url, self.next_check)
 
     @transition(field=status, source='DOWNTIME', target='RETRYING')

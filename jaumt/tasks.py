@@ -22,6 +22,7 @@ from celery import shared_task
 from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.crypto import get_random_string
+from django.conf import settings
 
 from jaumt.models import Url
 
@@ -30,13 +31,13 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def http_get(url_pk):
+    """ Celery task to check a Url. """
     url = Url.objects.get(pk=url_pk)
     payload = None
     if url.no_cache:
         no_cache_string = get_random_string(length=42)
         payload = {'jaumt': no_cache_string}
-    # FIXME poner user-agent en una config
-    headers = {'User-Agent': 'Jaumt/0.1 (+http://jaumt.example.com)'}
+    headers = {'User-Agent': settings.JAUMT_USER_AGENT}
     if url.hostname != '':
         headers['Host'] = url.hostname
     try:
