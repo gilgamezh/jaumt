@@ -97,7 +97,7 @@ class Url(models.Model):
     last_check_retrying = models.DateTimeField('Last RETRYING', null=True, editable=False)
 
     def __str__(self):
-        return "{} - Last Check {} - {}. ".format(self.url, self.last_check, self.status)
+        return self.url
 
     def send_alerts(self):
         """ Send alerts for an Url """
@@ -155,7 +155,7 @@ class Url(models.Model):
         logger.info("%s current status: WARNING . Next Check: %s", self.url, self.next_check)
 
     @transition(field=status, source=['RETRYING', 'WARNING'], target='DOWNTIME')
-    def set_downtime(self, send_alerts=True):
+    def set_downtime(self, send_alerts=False):
         """ Transition to set the DOWNTIME  status and trigger all the related stuff to it """
         self.last_check_error = timezone.now()
         self.next_check = (timezone.now() + timezone.timedelta(seconds=self.check_interval / 2))
@@ -192,7 +192,7 @@ class Url(models.Model):
                 current_status_code = '{}'.format(response.status_code)
                 is_error = True
         else:
-            current_status_code = 'Exception: {}'.format(error_msg)
+            current_status_code = 'Error: {}'.format(error_msg)
             is_error = True
 
         self.update_status(is_error, current_status_code)

@@ -159,5 +159,3 @@ try:
     from .local_settings import *  # NOQA
 except:
     pass
-
-

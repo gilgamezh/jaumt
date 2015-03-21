@@ -15,8 +15,7 @@
 #
 # For further info, check  https://github.com/gilgamezh/jaumt
 
-# from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import render
 from django.views.generic import View
 
 from jaumt.models import Url
@@ -26,4 +25,4 @@ from jaumt.models import Url
 class MyView(View):
     def get(self, requests):
         urls = ' \n'.join([url.description for url in Url.objects.all()])
-        return HttpResponse(urls)
+        return render(requests, 'base.html')
