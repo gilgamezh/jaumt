@@ -1,0 +1,56 @@
+{% extends 'jaumt/base.html' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Jaumt Status</h1>
+</div>
+    {% if urls %}
+      <div class="row">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>edit</th>
+                    <th>Url [hostname]</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>status_code/error msg</ht>
+                    <th>Last Check</th>
+                    <th>Details</th>
+                    <th>Website</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for url in urls %}
+                    <tr>
+                      <td><a href="/admin/jaumt/url/{{url.id}}/">Edit</a></td>
+                      <td>
+                        <a href="{{url.url}}">{{url.url}}</a>
+                        {% if url.hostname != '' %}  
+                          <br> {{url.hostname}}
+                        {% endif %}
+                      </td>
+                      <td>{{url.description}}</td>
+                      <td>
+                        {% if url.status == 'OK' %}
+                            <span class="label label-success">{{url.status}}</span>
+                        {% elif url.status == 'DOWNTIME' %}
+                            <span class="label label-danger">{{url.status}}</span>
+                        {% else %}
+                            <span class="label label-warning">{{url.status}}</span>
+                        {% endif %}
+                      </td>
+                      <td>{{url.current_status_code}}</td>
+                      <td>{{url.last_check}}</td>
+                      <td><a href="/url/{{url.id}}">Details</a></td>
+                      <td><a href="/admin/jaumt/website/{{url.website_id}}">{{url.website.description}}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+      </div>
+    {% else %}
+        <p>No Urls are available.</p>
+    {% endif %}
+
+</div>
+{% endblock %}

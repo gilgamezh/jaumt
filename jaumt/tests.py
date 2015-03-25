@@ -221,4 +221,3 @@ class UrlTestCase(TestCase):
         url.update_status = MagicMock()
         url.handle_response(response=response)
         url.update_status.assert_called_with(False, '200')
-

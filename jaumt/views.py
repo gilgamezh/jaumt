@@ -22,7 +22,22 @@ from jaumt.models import Url
 
 
 # Create your views here.
-class MyView(View):
+class Status(View):
     def get(self, requests):
-        urls = ' \n'.join([url.description for url in Url.objects.all()])
-        return render(requests, 'base.html')
+        urls = Url.objects.all().order_by('status')
+        context = {'urls': urls}
+        return render(requests, 'jaumt/status.html', context)
+
+
+class Home(View):
+    def get(self, requests):
+        return render(requests, 'jaumt/home.html')
+
+
+class StatusUrl(View):
+    def get(self, requests, url_id):
+        url = Url.objects.get(pk=url_id)
+        context = {'url': url}
+        return render(requests, 'jaumt/status_url.html', context)
+
+

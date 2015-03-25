@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'django_fsm',
     'fsm_admin',
     'django_extensions',
+    'bootstrap3',
 )
 
 MIDDLEWARE_CLASSES = (
