@@ -30,9 +30,9 @@
                       </td>
                       <td>{{url.description}}</td>
                       <td>
-                        {% if url.status == 40  %}
+                        {% if url.status == UrlStatusEnum.OK  %}
                             <span class="label label-success"> OK </span>
-                        {% elif url.status == 10 %}
+                        {% elif url.status == UrlStatusEnum.DOWNTIME %}
                             <span class="label label-danger"> DOWNTIME </span>
                         {% else %}
                             <span class="label label-warning"> WARNING</span>

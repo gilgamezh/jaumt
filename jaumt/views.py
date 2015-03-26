@@ -18,7 +18,7 @@
 from django.shortcuts import render
 from django.views.generic import View
 
-from jaumt.models import Url
+from jaumt.models import Url, UrlStatusEnum
 
 
 # Create your views here.
@@ -26,7 +26,7 @@ class Status(View):
     def get(self, requests):
         urls = Url.objects.all().order_by('status').exclude(
             enabled=False).exclude(website__enabled=False)
-        context = {'urls': urls}
+        context = {'urls': urls, 'UrlStatusEnum': UrlStatusEnum}
         return render(requests, 'jaumt/status.html', context)
 
 
