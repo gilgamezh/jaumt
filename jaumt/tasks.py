@@ -68,9 +68,7 @@ def send_email_alert(subject, message, from_email, recipient_list):
 @shared_task
 def queue_checks():
     urls = Url.objects.filter(
-        next_check__lte=timezone.now()).exclude(
-            enabled=False).exclude(
-                website__enabled=False)
+        next_check__lte=timezone.now()).exclude(enabled=False).exclude(website__enabled=False)
     for url in urls:
         logger.info("Queuing %s to check", url.url)
         url.check_url()

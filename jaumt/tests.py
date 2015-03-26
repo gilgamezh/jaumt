@@ -300,4 +300,3 @@ class UrlTestCase(TestCase):
         from_email = 'jaumt@jaumt.com'
         recipient_lists = ['pirate@jaumt.com', 'monesvol@jaumt.com']
         send_email_alert.delay.assert_called_with(subject, message, from_email, recipient_lists)
-
