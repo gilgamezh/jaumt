@@ -21,10 +21,10 @@ from unittest.mock import MagicMock
 
 from django.test import TestCase
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
 from django.conf import settings
 
 from jaumt.models import Url, Website, RecipientList
+from jaumt.tasks import send_email_alert
 
 
 class UrlTestCase(TestCase):
@@ -49,7 +49,7 @@ class UrlTestCase(TestCase):
                                                  owner=self.pirate)
         self.test_site2.recipients_list.add(self.recipient_list2)
         #  settings
-        settings.JAUMT_EMAIL_FROM =  'jaumt@jaumt.com'
+        settings.JAUMT_EMAIL_FROM = 'jaumt@jaumt.com'
         settings.JAUMT_EMAIL_PREFIX = '[Jaumt]'
         settings.JAUMT_USER_AGENT = "User-Agent': 'Jaumt/0.1 (+http://jaumt.com)"
 
@@ -257,26 +257,47 @@ class UrlTestCase(TestCase):
                                  match_text='',
                                  no_match_text='',
                                  current_status_code='TestCase',
+                                 alert_footer='foo bar',
                                  enabled=True)
-        send_mail = MagicMock()
+        send_email_alert.delay = MagicMock()
+        url.last_check = '1982-08-02 11:11:11.000000+00:00'
+        url.last_check_ok = '1982-08-02 11:11:11.000000+00:00'
         url.send_alerts()
         subject = '[Jaumt][OK] test site 1'
         message = ("""Current status for test site 1 is: OK \n\r
                    Url: http://example.com \n\r
                    Current http_status or error message: TestCase \n\r
-                   Last Check: {} \n\r
-                   Last Check OK: {} \n\r
+                   Last Check: 1982-08-02 11:11:11.000000+00:00 \n\r
+                   Last Check OK: 1982-08-02 11:11:11.000000+00:00 \n\r
                    Url comments: \n\r
-                   {}""").format(self.description, current_status, self.current_status_code,
-                                 self.url, self.last_check, self.last_check_ok, self.alert_footer)
+                   foo bar""")
+        from_email = 'jaumt@jaumt.com'
+        recipient_lists = ['pirate@jaumt.com', 'monesvol@jaumt.com']
+        send_email_alert.delay.assert_called_with(subject, message, from_email, recipient_lists)
 
-
-    def test_send_ok_alert_with_rcplist(self):
+    def test_send_error_alert(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='RETRYING',
+                                 status='WARNING',
                                  match_text='',
-                                 no_match_text='foo',
-                                 recipients_list=self.recipient_list1,
+                                 no_match_text='',
+                                 current_status_code='TestCase',
+                                 alert_footer='foo bar',
                                  enabled=True)
+        send_email_alert.delay = MagicMock()
+        url.last_check = '1982-08-02 11:11:11.000000+00:00'
+        url.last_check_ok = '1982-08-02 11:11:11.000000+00:00'
+        url.send_alerts()
+        subject = '[Jaumt][ERROR] test site 1'
+        message = ("""Current status for test site 1 is: ERROR \n\r
+                   Url: http://example.com \n\r
+                   Current http_status or error message: TestCase \n\r
+                   Last Check: 1982-08-02 11:11:11.000000+00:00 \n\r
+                   Last Check OK: 1982-08-02 11:11:11.000000+00:00 \n\r
+                   Url comments: \n\r
+                   foo bar""")
+        from_email = 'jaumt@jaumt.com'
+        recipient_lists = ['pirate@jaumt.com', 'monesvol@jaumt.com']
+        send_email_alert.delay.assert_called_with(subject, message, from_email, recipient_lists)
+

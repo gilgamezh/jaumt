@@ -113,8 +113,9 @@ class Url(models.Model):
                    Last Check: {} \n\r
                    Last Check OK: {} \n\r
                    Url comments: \n\r
-                   {}""").format(self.description, current_status, self.current_status_code,
-                                 self.url, self.last_check, self.last_check_ok, self.alert_footer)
+                   {}""").format(self.description, current_status, self.url,
+                                 self.current_status_code, self.last_check, self.last_check_ok,
+                                 self.alert_footer)
         recipient_lists = []
         if len(self.recipients_list.all()) > 0:
             # if url has a recipient_list use it
