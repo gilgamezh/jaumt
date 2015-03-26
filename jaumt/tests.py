@@ -248,7 +248,7 @@ class UrlTestCase(TestCase):
         url.handle_response(response=response)
         url.update_status.assert_called_with(False, '200')
 
-    #test send_alerts()
+    # test send_alerts()
     def test_send_ok_alert(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
@@ -277,7 +277,7 @@ class UrlTestCase(TestCase):
         self.assertEqual(call_args[0], subject)
         self.assertEqual(call_args[1], message)
         self.assertEqual(call_args[2], from_email)
-        self.assertListEqual(call_args[3], recipient_lists)
+        self.assertCountEqual(call_args[3], recipient_lists)
 
     def test_send_error_alert(self):
         url = Url.objects.create(description='test site 1',
@@ -307,4 +307,69 @@ class UrlTestCase(TestCase):
         self.assertEqual(call_args[0], subject)
         self.assertEqual(call_args[1], message)
         self.assertEqual(call_args[2], from_email)
-        self.assertListEqual(call_args[3], recipient_lists)
+        self.assertCountEqual(call_args[3], recipient_lists)
+
+    def test_send_ok_alert_with_url_rcps(self):
+        url = Url.objects.create(description='test site 1',
+                                 website=self.test_site1,
+                                 url='http://example.com',
+                                 status='RETRYING',
+                                 match_text='',
+                                 no_match_text='',
+                                 current_status_code='TestCase',
+                                 alert_footer='foo bar',
+                                 enabled=True)
+        url.recipients_list.add(self.recipient_list2)
+        url.last_check = '1982-08-02 11:11:11.000000+00:00'
+        url.last_check_ok = '1982-08-02 11:11:11.000000+00:00'
+        url.save()
+        send_email_alert.delay = MagicMock()
+        url.send_alerts()
+        subject = '[Jaumt][OK] test site 1'
+        message = ("""Current status for test site 1 is: OK \n\r
+                   Url: http://example.com \n\r
+                   Current http_status or error message: TestCase \n\r
+                   Last Check: 1982-08-02 11:11:11.000000+00:00 \n\r
+                   Last Check OK: 1982-08-02 11:11:11.000000+00:00 \n\r
+                   Url comments: \n\r
+                   foo bar""")
+        from_email = 'jaumt@jaumt.com'
+        recipient_lists = ['pirate@jaumt.com', 'gilgamezh@jaumt.com']
+        call_args = send_email_alert.delay.call_args[0]
+        self.assertEqual(call_args[0], subject)
+        self.assertEqual(call_args[1], message)
+        self.assertEqual(call_args[2], from_email)
+        self.assertCountEqual(call_args[3], recipient_lists)
+
+    def test_send_ok_alert_with_two_url_rcps(self):
+        url = Url.objects.create(description='test site 1',
+                                 website=self.test_site1,
+                                 url='http://example.com',
+                                 status='RETRYING',
+                                 match_text='',
+                                 no_match_text='',
+                                 current_status_code='TestCase',
+                                 alert_footer='foo bar',
+                                 enabled=True)
+        url.recipients_list.add(self.recipient_list2)
+        url.recipients_list.add(self.recipient_list1)
+        url.last_check = '1982-08-02 11:11:11.000000+00:00'
+        url.last_check_ok = '1982-08-02 11:11:11.000000+00:00'
+        url.save()
+        send_email_alert.delay = MagicMock()
+        url.send_alerts()
+        subject = '[Jaumt][OK] test site 1'
+        message = ("""Current status for test site 1 is: OK \n\r
+                   Url: http://example.com \n\r
+                   Current http_status or error message: TestCase \n\r
+                   Last Check: 1982-08-02 11:11:11.000000+00:00 \n\r
+                   Last Check OK: 1982-08-02 11:11:11.000000+00:00 \n\r
+                   Url comments: \n\r
+                   foo bar""")
+        from_email = 'jaumt@jaumt.com'
+        recipient_lists = ['pirate@jaumt.com', 'gilgamezh@jaumt.com', 'monesvol@jaumt.com']
+        call_args = send_email_alert.delay.call_args[0]
+        self.assertEqual(call_args[0], subject)
+        self.assertEqual(call_args[1], message)
+        self.assertEqual(call_args[2], from_email)
+        self.assertCountEqual(call_args[3], recipient_lists)

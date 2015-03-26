@@ -124,9 +124,9 @@ class Url(models.Model):
             # else use the website recipient_list as default
             recipients = self.website.recipients_list
 
-            for recipient in recipients.all():
-                for user in recipient.recipients.all():
-                    recipient_lists.append(user.email)
+        for recipient in recipients.all():
+            for user in recipient.recipients.all():
+                recipient_lists.append(user.email)
         # Deleting duplicateds
         recipient_lists = list(set(recipient_lists))
         from jaumt.tasks import send_email_alert  # NOQA
