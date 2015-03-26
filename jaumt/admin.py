@@ -20,15 +20,22 @@ from django.contrib import admin
 from jaumt.models import Url, Website, RecipientList
 
 
+def make_enable(modeladmin, request, queryset):
+    queryset.update(enabled=True)
+make_enable.short_description = "Mark selected items as enabled"
+
+
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'enabled', 'owner')
     list_filter = ['owner']
+    actions = [make_enable]
 
 
 class UrlAdmin(admin.ModelAdmin):
     list_display = ('website', 'description', 'url', 'status', 'current_status_code', 'enabled',
                     'last_check', 'next_check')
     list_filter = ['website', 'status']
+    actions = [make_enable]
 
 admin.site.register(Website, WebsiteAdmin)
 admin.site.register(Url, UrlAdmin)
