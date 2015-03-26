@@ -23,7 +23,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from django.conf import settings
 
-from jaumt.models import Url, Website, RecipientList
+from jaumt.models import Url, UrlStatusEnum, Website, RecipientList
 from jaumt.tasks import send_email_alert
 
 
@@ -58,89 +58,89 @@ class UrlTestCase(TestCase):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='OK',
+                                 status=UrlStatusEnum.OK,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=True, current_status_code='404')
         self.assertFalse(url.send_alerts.called)
-        self.assertEqual(url.status, 'WARNING')
+        self.assertEqual(url.status, UrlStatusEnum.WARNING)
 
     def test_url_status_ok_ok(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='OK',
+                                 status=UrlStatusEnum.OK,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=False, current_status_code='200')
         self.assertFalse(url.send_alerts.called)
-        self.assertEqual(url.status, 'OK')
+        self.assertEqual(url.status, UrlStatusEnum.OK)
 
     def test_url_status_warning_error(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='WARNING',
+                                 status=UrlStatusEnum.WARNING,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=True, current_status_code='500')
         self.assertTrue(url.send_alerts.called)
-        self.assertEqual(url.status, 'DOWNTIME')
+        self.assertEqual(url.status, UrlStatusEnum.DOWNTIME)
 
     def test_url_status_warning_ok(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='WARNING',
+                                 status=UrlStatusEnum.WARNING,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=False, current_status_code='200')
         self.assertFalse(url.send_alerts.called)
-        self.assertEqual(url.status, 'OK')
+        self.assertEqual(url.status, UrlStatusEnum.OK)
 
     def test_url_status_downtime_error(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='DOWNTIME',
+                                 status=UrlStatusEnum.DOWNTIME,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=True, current_status_code='500')
         self.assertFalse(url.send_alerts.called)
-        self.assertEqual(url.status, 'DOWNTIME')
+        self.assertEqual(url.status, UrlStatusEnum.DOWNTIME)
 
     def test_url_status_downtime_ok(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='DOWNTIME',
+                                 status=UrlStatusEnum.DOWNTIME,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=False, current_status_code='200')
         self.assertFalse(url.send_alerts.called)
-        self.assertEqual(url.status, 'RETRYING')
+        self.assertEqual(url.status, UrlStatusEnum.RETRYING)
 
     def test_url_status_retrying_error(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='RETRYING',
+                                 status=UrlStatusEnum.RETRYING,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=True, current_status_code='500')
         self.assertFalse(url.send_alerts.called)
-        self.assertEqual(url.status, 'DOWNTIME')
+        self.assertEqual(url.status, UrlStatusEnum.DOWNTIME)
 
     def test_url_status_retrying_ok(self):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='RETRYING',
+                                 status=UrlStatusEnum.RETRYING,
                                  enabled=True)
         url.send_alerts = MagicMock()
         url.update_status(is_error=False, current_status_code='200')
         self.assertTrue(url.send_alerts.called)
-        self.assertEqual(url.status, 'OK')
+        self.assertEqual(url.status, UrlStatusEnum.OK)
 
     #  Url.handle_response() tests
     def test_url_handle_response_with_error(self):
@@ -253,7 +253,7 @@ class UrlTestCase(TestCase):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='RETRYING',
+                                 status=UrlStatusEnum.RETRYING,
                                  match_text='',
                                  no_match_text='',
                                  current_status_code='TestCase',
@@ -283,7 +283,7 @@ class UrlTestCase(TestCase):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='WARNING',
+                                 status=UrlStatusEnum.WARNING,
                                  match_text='',
                                  no_match_text='',
                                  current_status_code='TestCase',
@@ -313,7 +313,7 @@ class UrlTestCase(TestCase):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='RETRYING',
+                                 status=UrlStatusEnum.RETRYING,
                                  match_text='',
                                  no_match_text='',
                                  current_status_code='TestCase',
@@ -345,7 +345,7 @@ class UrlTestCase(TestCase):
         url = Url.objects.create(description='test site 1',
                                  website=self.test_site1,
                                  url='http://example.com',
-                                 status='RETRYING',
+                                 status=UrlStatusEnum.RETRYING,
                                  match_text='',
                                  no_match_text='',
                                  current_status_code='TestCase',

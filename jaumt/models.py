@@ -21,7 +21,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User
-from django_fsm import FSMField, transition
+from django_fsm import FSMIntegerField, transition
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -49,6 +49,13 @@ class Website(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class UrlStatusEnum():
+    DOWNTIME = 10
+    RETRYING = 20
+    WARNING = 30
+    OK = 40
 
 
 class Url(models.Model):
@@ -86,7 +93,7 @@ class Url(models.Model):
         "This text will be attached on the alert message. Use it to link your documentation ;)."))
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
-    status = FSMField(default='OK', protected=True, editable=False)
+    status = FSMIntegerField(default=UrlStatusEnum.OK, protected=True, editable=False)
     current_status_code = models.CharField(max_length=300, null=True, editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(editable=False, auto_now_add=True)
@@ -102,7 +109,7 @@ class Url(models.Model):
     def send_alerts(self):
         """ Send alerts for an Url """
         from_email = settings.JAUMT_EMAIL_FROM
-        if self.status == 'WARNING':
+        if self.status == UrlStatusEnum.WARNING:
             current_status = 'ERROR'
         else:
             current_status = 'OK'
@@ -137,7 +144,8 @@ class Url(models.Model):
         from jaumt.tasks import http_get  # NOQA
         http_get.delay(self.pk)
 
-    @transition(field=status, source=['WARNING', 'RETRYING'], target='OK')
+    @transition(field=status, source=[UrlStatusEnum.WARNING, UrlStatusEnum.RETRYING],
+                target=UrlStatusEnum.OK)
     def set_ok(self, send_alerts=False):
         """ Transition to set the OK status and trigger all the related stuff to it """
         self.last_check_ok = timezone.now()
@@ -147,7 +155,7 @@ class Url(models.Model):
             logger.info("Sending OK alerts for %s", self.url)
         logger.info("%s current status: OK . Next Check: %s", self.url, self.next_check)
 
-    @transition(field=status, source='OK', target='WARNING')
+    @transition(field=status, source=UrlStatusEnum.OK, target=UrlStatusEnum.WARNING)
     def set_warning(self):
         """ Transition to set the WARNING  status and trigger all the related stuff to it """
         self.last_check_warn = timezone.now()
@@ -155,7 +163,8 @@ class Url(models.Model):
             timezone.now() + timezone.timedelta(seconds=self.check_interval / 4))
         logger.info("%s current status: WARNING . Next Check: %s", self.url, self.next_check)
 
-    @transition(field=status, source=['RETRYING', 'WARNING'], target='DOWNTIME')
+    @transition(field=status, source=[UrlStatusEnum.RETRYING, UrlStatusEnum.WARNING],
+                target=UrlStatusEnum.DOWNTIME)
     def set_downtime(self, send_alerts=False):
         """ Transition to set the DOWNTIME  status and trigger all the related stuff to it """
         self.last_check_error = timezone.now()
@@ -165,7 +174,7 @@ class Url(models.Model):
             logger.info("Sending DOWNTIME alerts for %s.", self.url)
         logger.info("%s current status: DOWNTIME . Next Check: %s", self.url, self.next_check)
 
-    @transition(field=status, source='DOWNTIME', target='RETRYING')
+    @transition(field=status, source=UrlStatusEnum.DOWNTIME, target=UrlStatusEnum.RETRYING)
     def set_retrying(self):
         """ Transition to set the RETRYING  status and trigger all the related stuff to it """
         self.last_check_retrying = timezone.now()
@@ -204,27 +213,27 @@ class Url(models.Model):
                      is_error, current_status_code)
         self.current_status_code = current_status_code
         if not is_error:
-            if self.status == 'OK':
+            if self.status == UrlStatusEnum.OK:
                 self.next_check = (
                     timezone.now() + timezone.timedelta(seconds=self.check_interval))
                 logger.info("%s current status: OK. Next Check: %s", self.url, self.next_check)
-            elif self.status == "WARNING":
+            elif self.status == UrlStatusEnum.WARNING:
                 self.set_ok()
-            elif self.status == "RETRYING":
+            elif self.status == UrlStatusEnum.RETRYING:
                 self.set_ok(send_alerts=True)
-            elif self.status == "DOWNTIME":
+            elif self.status == UrlStatusEnum.DOWNTIME:
                 self.set_retrying()
         else:
-            if self.status == 'DOWNTIME':
+            if self.status == UrlStatusEnum.DOWNTIME:
                 self.next_check = (
                     timezone.now() + timezone.timedelta(seconds=self.check_interval / 2))
                 logger.info(
                     "%s current status: DOWNTIME. Next Check: %s", self.url, self.next_check)
-            elif self.status == "OK":
+            elif self.status == UrlStatusEnum.OK:
                 self.set_warning()
-            elif self.status == "WARNING":
+            elif self.status == UrlStatusEnum.WARNING:
                 self.set_downtime(send_alerts=True)
-            elif self.status == "RETRYING":
+            elif self.status == UrlStatusEnum.RETRYING:
                 self.set_downtime()
         self.save()
         # send to graphite status_code, response_time, size, etc

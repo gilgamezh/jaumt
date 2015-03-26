@@ -9,20 +9,19 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>edit</th>
                     <th>Url [hostname]</th>
                     <th>Description</th>
                     <th>Status</th>
                     <th>status_code/error msg</ht>
                     <th>Last Check</th>
                     <th>Details</th>
+                    <th>edit</th>
                     <th>Website</th>
                 </tr>
             </thead>
             <tbody>
                 {% for url in urls %}
                     <tr>
-                      <td><a href="/admin/jaumt/url/{{url.id}}/">Edit</a></td>
                       <td>
                         <a href="{{url.url}}">{{url.url}}</a>
                         {% if url.hostname != '' %}  
@@ -31,17 +30,26 @@
                       </td>
                       <td>{{url.description}}</td>
                       <td>
-                        {% if url.status == 'OK' %}
-                            <span class="label label-success">{{url.status}}</span>
-                        {% elif url.status == 'DOWNTIME' %}
-                            <span class="label label-danger">{{url.status}}</span>
+                        {% if url.status == 40  %}
+                            <span class="label label-success"> OK </span>
+                        {% elif url.status == 10 %}
+                            <span class="label label-danger"> DOWNTIME </span>
                         {% else %}
-                            <span class="label label-warning">{{url.status}}</span>
+                            <span class="label label-warning"> WARNING</span>
                         {% endif %}
                       </td>
                       <td>{{url.current_status_code}}</td>
                       <td>{{url.last_check}}</td>
-                      <td><a href="/url/{{url.id}}">Details</a></td>
+                      <td>
+                        <a href="/url/{{url.id}}">
+                          <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                        </a>
+                      </td>
+                      <td>
+                        <a href="/admin/jaumt/url/{{url.id}}/">
+                          <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                        </a>
+                      </td>
                       <td><a href="/admin/jaumt/website/{{url.website_id}}">{{url.website.description}}</a></td>
                     </tr>
                 {% endfor %}
