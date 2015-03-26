@@ -280,6 +280,3 @@ class UrlTestCase(TestCase):
                                  no_match_text='foo',
                                  recipients_list=self.recipient_list1,
                                  enabled=True)
-
-
-

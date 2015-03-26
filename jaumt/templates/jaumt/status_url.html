@@ -1,0 +1,13 @@
+{% extends 'jaumt/base.html' %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{url.url}}</h1>
+</div>
+
+<h3>{{url.hostname}}</h3>
+<p>{{url.Description}}</p>
+<button type="button" class="btn btn-lg btn-success">{{url.status}}</button>
+
+
+{% endblock %}
