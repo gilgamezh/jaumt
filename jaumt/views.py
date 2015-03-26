@@ -24,7 +24,9 @@ from jaumt.models import Url
 # Create your views here.
 class Status(View):
     def get(self, requests):
-        urls = Url.objects.all().order_by('status')
+        urls = Url.objects.all().order_by('status').exclude(
+            enabled=False).exclude(
+                website__enabled=False)
         context = {'urls': urls}
         return render(requests, 'jaumt/status.html', context)
 
