@@ -34,7 +34,7 @@ class UrlTestCase(TestCase):
         self.monesvol = User.objects.create_user('monesvol', email='monesvol@jaumt.com')
         self.pirate = User.objects.create_user('pirate', email='pirate@jaumt.com')
         self.gilgamezh = User.objects.create_user('gilgamezh', email='gilgamezh@jaumt.com')
-        #recipient lists
+        # recipient lists
         self.recipient_list1 = RecipientList.objects.create(description='test recipient list 1')
         self.recipient_list1.recipients.add(self.monesvol)
         self.recipient_list1.recipients.add(self.pirate)
@@ -273,7 +273,11 @@ class UrlTestCase(TestCase):
                    foo bar""")
         from_email = 'jaumt@jaumt.com'
         recipient_lists = ['pirate@jaumt.com', 'monesvol@jaumt.com']
-        send_email_alert.delay.assert_called_with(subject, message, from_email, recipient_lists)
+        call_args = send_email_alert.delay.call_args[0]
+        self.assertEqual(call_args[0], subject)
+        self.assertEqual(call_args[1], message)
+        self.assertEqual(call_args[2], from_email)
+        self.assertListEqual(call_args[3], recipient_lists)
 
     def test_send_error_alert(self):
         url = Url.objects.create(description='test site 1',
@@ -299,4 +303,8 @@ class UrlTestCase(TestCase):
                    foo bar""")
         from_email = 'jaumt@jaumt.com'
         recipient_lists = ['pirate@jaumt.com', 'monesvol@jaumt.com']
-        send_email_alert.delay.assert_called_with(subject, message, from_email, recipient_lists)
+        call_args = send_email_alert.delay.call_args[0]
+        self.assertEqual(call_args[0], subject)
+        self.assertEqual(call_args[1], message)
+        self.assertEqual(call_args[2], from_email)
+        self.assertListEqual(call_args[3], recipient_lists)
