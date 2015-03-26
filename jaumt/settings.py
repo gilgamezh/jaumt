@@ -43,7 +43,6 @@ INSTALLED_APPS = (
     'jaumt',
     # contrib
     'django_fsm',
-    'fsm_admin',
     'django_extensions',
     'bootstrap3',
 )
@@ -85,11 +84,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-# needed by fsm-admin
-TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
-    'django.core.context_processors.request',
-)
 
 
 # Static files (CSS, JavaScript, Images)
