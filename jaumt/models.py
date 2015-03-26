@@ -61,7 +61,7 @@ class UrlStatusEnum():
 class Url(models.Model):
     """ An Url to check """
     description = models.CharField(
-        max_length=140, help_text=_(""" Details about the URL that Jaumt will check. This
+        max_length=300, help_text=_(""" Details about the URL that Jaumt will check. This
                                     description will be used to identify the URL on all the
                                     alerts and metrics.
                                     e.g.: 'Gilgamezh's blog home'
@@ -81,10 +81,10 @@ class Url(models.Model):
                                                to the url.\n
                                                e.g.: example.com?jaumt=nbvli959NoLXKFGuCj40 """))
     match_text = models.CharField(
-        max_length=100, null=True, blank=True, help_text=_(
+        max_length=500, null=True, blank=True, help_text=_(
             "This text have to exist in de response content."))
     no_match_text = models.CharField(
-        max_length=100, null=True, blank=True, help_text=_("The opposite to match_text"))
+        max_length=500, null=True, blank=True, help_text=_("The opposite to match_text"))
     recipients_list = models.ManyToManyField(
         RecipientList, blank=True, null=True, help_text=_(""" By default the website recipient list
                                                           will be used. If you select at least one
