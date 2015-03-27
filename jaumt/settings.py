@@ -146,6 +146,21 @@ CELERYBEAT_SCHEDULE = {
 }
 CELERY_TIMEZONE = 'UTC'
 
+CELERY_ROUTES = {
+    'jaumt.tasks.http_get': {
+        'queue': 'checks',
+        'routing_key': 'checks',
+    },
+    'jaumt.tasks.queue_checks': {
+        'queue': 'checks',
+        'routing_key': 'checks',
+    },
+    'jaumt.tasks.send_email_alert': {
+        'queue': 'notifications',
+        'routing_key': 'notifications'
+    }
+}
+
 #  Django_admin_bootstrapped config
 DAB_FIELD_RENDERER = 'django_admin_bootstrapped.renderers.BootstrapFieldRenderer'
 
