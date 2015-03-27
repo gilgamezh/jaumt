@@ -25,17 +25,22 @@ def make_enable(modeladmin, request, queryset):
 make_enable.short_description = "Mark selected items as enabled"
 
 
+def make_disable(modeladmin, request, queryset):
+    queryset.update(enabled=False)
+make_disable.short_description = "Mark selected items as disabled"
+
+
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'enabled', 'owner')
     list_filter = ['owner']
-    actions = [make_enable]
+    actions = [make_enable, make_disable]
 
 
 class UrlAdmin(admin.ModelAdmin):
     list_display = ('website', 'description', 'url', 'status', 'current_status_code', 'enabled',
                     'last_check', 'next_check')
     list_filter = ['website', 'status']
-    actions = [make_enable]
+    actions = [make_enable, make_disable]
 
 admin.site.register(Website, WebsiteAdmin)
 admin.site.register(Url, UrlAdmin)
