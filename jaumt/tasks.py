@@ -19,14 +19,19 @@ import requests
 import logging
 
 from celery import shared_task
-from django.core.mail import send_mail
-from django.utils import timezone
-from django.utils.crypto import get_random_string
+
 from django.conf import settings
+from django.utils import timezone
+from django.core.cache import cache
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+
 
 from jaumt.models import Url
 
 logger = logging.getLogger(__name__)
+
+LOCK_EXPIRE = 60 * 5  # Lock expires in 5 minutes
 
 
 @shared_task
@@ -52,6 +57,8 @@ def http_get(url_pk):
         logger.debug("Response: Headers: %s HTTP_status_code: %s",
                      response.headers, response.status_code)
         url.handle_response(response)
+        lock_id = 'lock-{}'.format(url.pk)
+        cache.delete(lock_id)
     except requests.exceptions.RequestException as error:
         url.handle_response(response=None, is_error=True, error_msg=str(error))
         logger.error('Request to %s failed with error: %s', url.url, error)
@@ -75,5 +82,21 @@ def queue_checks():
     urls = Url.objects.filter(
         next_check__lte=timezone.now()).exclude(enabled=False).exclude(website__enabled=False)
     for url in urls:
-        logger.info("Queuing %s to check", url.url)
-        url.check_url()
+
+        lock_id = 'lock-{}'.format(url.pk)
+
+        def acquire_lock():
+            return cache.add(lock_id, url.url, LOCK_EXPIRE)
+
+        def release_lock():
+            return cache.delete(lock_id)
+
+        if acquire_lock():
+            logger.info("Queuing %s::%s to check", url.description, url.url)
+            try:
+                url.check_url()
+            except:
+                release_lock()
+        else:
+            logger.debug('Url %s::%s is already being checked by another worker', url.description,
+                         url.url)

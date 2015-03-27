@@ -139,7 +139,7 @@ BROKER_URL = 'amqp://guest:guest@localhost//'
 # CELERY_RESULT_SERIALIZER = 'json'
 
 CELERYBEAT_SCHEDULE = {
-    'queue-every-5-seconds': {
+    'add-every-5-seconds': {
         'task': 'jaumt.tasks.queue_checks',
         'schedule': timedelta(seconds=5),
     },
