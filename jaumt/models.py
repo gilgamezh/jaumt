@@ -61,7 +61,7 @@ class UrlStatusEnum():
 class Url(models.Model):
     """ An Url to check """
     description = models.CharField(
-        max_length=300, help_text=_(""" Details about the URL that Jaumt will check. This
+        max_length=255, help_text=_(""" Details about the URL that Jaumt will check. This
                                     description will be used to identify the URL on all the
                                     alerts and metrics.
                                     e.g.: 'Gilgamezh's blog home'
@@ -69,8 +69,10 @@ class Url(models.Model):
     website = models.ForeignKey(Website, related_name='urls')
     url = models.URLField(help_text=_("Url to check"))
     hostname = models.CharField(
-        max_length=500, null=True, blank=True, help_text=_("Host header for the request"))
-    timeout = models.IntegerField(default=3, help_text=_("Request timeout in seconds"))
+        max_length=255, null=True, blank=True, help_text=_("Host header for the request"))
+    check_ssl = models.BooleanField(
+        default=False, help_text=_("If enabled ssl cert will be checked"))
+    timeout = models.IntegerField(default=30, help_text=_("Request timeout in seconds"))
     response_ms_sla = models.IntegerField(
         default=200, help_text=_("Expected response in milliseconds A.K.A. SLA"))
     check_interval = models.IntegerField(

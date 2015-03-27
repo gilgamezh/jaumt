@@ -40,10 +40,15 @@ def http_get(url_pk):
     headers = {'User-Agent': settings.JAUMT_USER_AGENT}
     if url.hostname != '':
         headers['Host'] = url.hostname
+    if url.check_ssl:
+        verify = True
+    else:
+        verify = False
     try:
         logger.info("Checking %s, No Cache: %s Headers: %s Timeout: %s",
                     url.url, url.no_cache, headers, url.timeout)
-        response = requests.get(url.url, params=payload, headers=headers, timeout=url.timeout)
+        response = requests.get(url.url, params=payload, headers=headers, timeout=url.timeout,
+                                verify=verify)
         logger.debug("Response: Headers: %s HTTP_status_code: %s",
                      response.headers, response.status_code)
         url.handle_response(response)
