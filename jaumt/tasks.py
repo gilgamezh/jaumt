@@ -57,11 +57,12 @@ def http_get(url_pk):
         logger.debug("Response: Headers: %s HTTP_status_code: %s",
                      response.headers, response.status_code)
         url.handle_response(response)
-        lock_id = 'lock-{}'.format(url.pk)
-        cache.delete(lock_id)
     except requests.exceptions.RequestException as error:
         url.handle_response(response=None, is_error=True, error_msg=str(error))
         logger.error('Request to %s failed with error: %s', url.url, error)
+    finally:
+        lock_id = 'lock-{}'.format(url.pk)
+        cache.delete(lock_id)
 
 
 @shared_task
