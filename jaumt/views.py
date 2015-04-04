@@ -38,5 +38,5 @@ class Home(View):
 class StatusUrl(View):
     def get(self, requests, url_id):
         url = Url.objects.get(pk=url_id)
-        context = {'url': url}
+        context = {'url': url, 'UrlStatusEnum': UrlStatusEnum}
         return render(requests, 'jaumt/status_url.html', context)

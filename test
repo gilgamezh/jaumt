@@ -10,6 +10,5 @@ else
     TARGET="jaumt"
 fi
 
-#nosetests3 -v -s $TARGET
 python3 manage.py test  -v2
 flake8 $TARGET --max-line-length=99 --exclude="jaumt/migrations"
