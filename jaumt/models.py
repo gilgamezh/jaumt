@@ -95,7 +95,13 @@ class Url(models.Model):
         "This text will be attached on the alert message. Use it to link your documentation ;)."))
     enabled = models.BooleanField(default=False, blank=True)
     # not editables
-    status = FSMIntegerField(default=UrlStatusEnum.OK, protected=True, editable=False)
+    STATE_CHOICES = ((UrlStatusEnum.OK, 'OK'),
+                     (UrlStatusEnum.WARNING, 'WARNING'),
+                     (UrlStatusEnum.DOWNTIME, 'DOWNTIME'),
+                     (UrlStatusEnum.RETRYING, 'RETRYING'))
+
+    status = FSMIntegerField(default=UrlStatusEnum.OK, protected=True, editable=False,
+                             choices=STATE_CHOICES)
     current_status_code = models.CharField(max_length=300, null=True, editable=False)
     modified = models.DateTimeField(null=True, editable=False, auto_now=True)
     last_check = models.DateTimeField(editable=False, auto_now_add=True)
