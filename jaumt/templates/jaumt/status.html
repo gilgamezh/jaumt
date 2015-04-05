@@ -7,18 +7,73 @@
 {% block content %}
 <div class="page-header">
   <h1>Jaumt Status</h1>
+
 </div>
+
+<div class="btn-toolbar" role="toolbar" aria-label="...">
+  <div class="btn-group" role="group" aria-label="...">
+      <a role="button" class="btn btn-default" href="/status/">Only Problems</a>
+      <a role="button" class="btn btn-info" href="/status?status={{UrlStatusEnum.RETRYING}}&status={{UrlStatusEnum.WARNING}}&status={{UrlStatusEnum.DOWNTIME}}&status={{UrlStatusEnum.OK}}">ALL</a>
+  </div>
+  <div class="btn-group" role="group" aria-label="...">
+      <a role="button" class="btn btn-success" href="/status?status={{UrlStatusEnum.OK}}">OK</a>
+      <a role="button" class="btn btn-warning" href="/status?status={{UrlStatusEnum.WARNING}}">WARNING</a>
+      <a role="button" class="btn btn-danger" href="/status?status={{UrlStatusEnum.DOWNTIME}}">DOWNTIME</a>
+      <a role="button" class="btn btn-warning" href="/status?status={{UrlStatusEnum.RETRYING}}">RETRYNG</a>
+  </div>
+</div>
+
     {% if urls %}
       <div class="row">
-        <table class="table">
+        <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Url [hostname]</th>
+                    <th>
+                      Url [hostname]
+                      <a href="?order_by=url">
+                      <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                      </a>
+                      <a href="?order_by=-url">
+                      <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+                      </a>
+                    </th>
                     <th>Description</th>
-                    <th>Status</th>
-                    <th>status_code/error msg</ht>
-                    <th>Last Check</th>
-                    <th>Next Check</th>
+                    <th>
+                      Status
+                      <a href="?order_by=status">
+                      <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                      </a>
+                      <a href="?order_by=-status">
+                      <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+                      </a>
+                    </th>
+                    <th>
+                      status_code/error msg
+                      <a href="?order_by=current_status_code">
+                      <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                      </a>
+                      <a href="?order_by=-current_status_code">
+                      <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+                      </a>
+                    </th>
+                    <th>
+                      Last Check
+                      <a href="?order_by=last_check">
+                      <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                      </a>
+                      <a href="?order_by=-last_check">
+                      <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+                      </a>
+                    </th>
+                    <th>
+                      Next Check
+                      <a href="?order_by=next_check">
+                      <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                      </a>
+                      <a href="?order_by=-next_check">
+                      <span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+                      </a>
+                    </th>
                     <th>Details</th>
                     <th>edit</th>
                 </tr>
@@ -50,7 +105,7 @@
                       <td>{{url.last_check}}</td>
                       <td>{{url.next_check}}</td>
                       <td>
-                        <a href="/url/{{url.id}}">
+                        <a href="/url/{{url.id}}/">
                           <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
                         </a>
                       </td>
@@ -68,6 +123,5 @@
         <p>No Urls are available.</p>
     {% endif %}
 
-</div>
 
 {% endblock %}

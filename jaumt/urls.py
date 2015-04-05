@@ -17,12 +17,12 @@
 
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
-from jaumt.views import Status, Home, StatusUrl
+from jaumt.views import Home, StatusUrl, UrlListView
 
 urlpatterns = patterns('',
                        # Examples:
                        url(r'^$', Home.as_view(), name='home'),
                        url(r'^admin/', include(admin.site.urls)),
-                       url(r'^status/', Status.as_view(), name='status'),
                        url(r'^url/(?P<url_id>\d+)/$', StatusUrl.as_view()),
+                       url(r'^status/$', UrlListView.as_view(), name='url-list'),
                        )

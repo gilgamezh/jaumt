@@ -164,6 +164,8 @@ CELERY_ROUTES = {
 #  Django_admin_bootstrapped config
 DAB_FIELD_RENDERER = 'django_admin_bootstrapped.renderers.BootstrapFieldRenderer'
 
+PAGINATE_SIZE = 25
+
 try:
     from .local_settings import *  # NOQA
 except:

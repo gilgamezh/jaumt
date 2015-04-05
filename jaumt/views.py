@@ -17,19 +17,14 @@
 
 from django.shortcuts import render
 from django.views.generic import View
+from django.views.generic.list import ListView
+from django.utils import timezone
+from django.conf import settings
 
 from jaumt.models import Url, UrlStatusEnum
 
 
 # Create your views here.
-class Status(View):
-    def get(self, requests):
-        urls = Url.objects.all().order_by('status').exclude(
-            enabled=False).exclude(website__enabled=False)
-        context = {'urls': urls, 'UrlStatusEnum': UrlStatusEnum}
-        return render(requests, 'jaumt/status.html', context)
-
-
 class Home(View):
     def get(self, requests):
         return render(requests, 'jaumt/home.html')
@@ -40,3 +35,28 @@ class StatusUrl(View):
         url = Url.objects.get(pk=url_id)
         context = {'url': url, 'UrlStatusEnum': UrlStatusEnum}
         return render(requests, 'jaumt/status_url.html', context)
+
+
+class UrlListView(ListView):
+    model = Url
+    paginate_by = settings.PAGINATE_SIZE
+    context_object_name = 'urls'
+    template_name = 'jaumt/status.html'
+
+    def get_queryset(self):
+        order_by = self.request.GET.get('order_by', default='status')
+        filter_by_status = self.request.GET.getlist('status',
+                                                    default=[UrlStatusEnum.WARNING,
+                                                             UrlStatusEnum.DOWNTIME,
+                                                             UrlStatusEnum.RETRYING])
+        queryset = Url.objects.all().order_by(order_by).exclude(
+            enabled=False).exclude(website__enabled=False)
+        queryset = queryset.filter(status__in=filter_by_status)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super(UrlListView, self).get_context_data(**kwargs)
+        context['now'] = timezone.now()
+        context['UrlStatusEnum'] = UrlStatusEnum
+        return context
+
