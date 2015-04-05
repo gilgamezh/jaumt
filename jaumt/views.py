@@ -59,4 +59,3 @@ class UrlListView(ListView):
         context['now'] = timezone.now()
         context['UrlStatusEnum'] = UrlStatusEnum
         return context
-
